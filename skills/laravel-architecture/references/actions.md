@@ -70,12 +70,12 @@ final class ChargeSubscription
 
     public int $tries = 3;
 
+    public function __construct(private readonly PaymentGateway $gateway) {}
+
     public function handle(Subscription $subscription): Payment
     {
         // Core logic — runs the same whether called sync or async
-        $gateway = app(PaymentGateway::class);
-
-        $charge = $gateway->charge(
+        $charge = $this->gateway->charge(
             amount: $subscription->plan->price_cents,
             method: $subscription->paymentMethod,
         );
@@ -176,6 +176,10 @@ With `lorisleiva/laravel-actions`, a Job class is never needed — the action co
 
 ### Dispatch Patterns
 
+- `::run()` — resolves the action from the container and calls `handle()` synchronously, returning the result.
+- `::dispatch()` — pushes the action onto the queue as a job; returns immediately.
+- `::make()` — resolves the action from the container **without** executing it. Useful for passing to `Bus::batch()`, testing with mocked dependencies, or deferring execution.
+
 ```php
 // Sync — blocks current request, returns result
 $payment = ChargeSubscription::run($subscription);
@@ -194,6 +198,10 @@ Bus::batch([
     new ChargeSubscription($subscription1),
     new ChargeSubscription($subscription2),
 ])->dispatch();
+
+// Resolve from container without executing — useful for batching, testing, or deferred execution
+$action = CreateUser::make();
+$result = $action->handle($data);
 ```
 
 ### Testing Actions
@@ -211,7 +219,7 @@ it('creates a user with a hashed password', function (): void {
         'password' => 'secret123',
     ]);
 
-    $user = CreateUser::run($data);
+    $user = app(CreateUser::class)->handle($data);
 
     expect($user)->toBeInstanceOf(User::class)
         ->and($user->email)->toBe('jane@example.com')

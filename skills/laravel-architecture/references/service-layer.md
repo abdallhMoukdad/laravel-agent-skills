@@ -13,8 +13,8 @@ namespace App\Services;
 
 use App\Data\InvoiceData;
 use App\Data\VoidInvoiceData;
+use App\Exceptions\InvoiceAlreadyPaidException;
 use App\Exceptions\InvoiceAlreadyVoidedException;
-use App\Exceptions\InvoiceNotPaidException;
 use App\Models\Invoice;
 use App\Models\Order;
 use Illuminate\Support\Facades\DB;
@@ -53,7 +53,7 @@ final class InvoiceService
         }
 
         if ($invoice->isPaid()) {
-            throw new InvoiceNotPaidException(
+            throw new InvoiceAlreadyPaidException(
                 "Invoice #{$invoice->number} is paid and cannot be voided without a refund."
             );
         }
@@ -143,7 +143,7 @@ final class InsufficientFundsException extends RuntimeException
 Catch and convert domain exceptions to HTTP responses inside a handler or controller — not inside the service:
 
 ```php
-// In app/Exceptions/Handler.php (or bootstrap/app.php in Laravel 12)
+// In bootstrap/app.php (Laravel 11+)
 $exceptions->render(function (InsufficientFundsException $e, Request $request) {
     return response()->json([
         'message' => $e->getMessage(),

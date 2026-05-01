@@ -50,6 +50,8 @@ final class OrderService
 
         $order->items()->createMany($data->items->toArray());
 
+        $this->mailer->send(new OrderConfirmation($order));
+
         return $order;
     }
 }
@@ -94,7 +96,7 @@ Prefer actions over services when the operation is discrete and testable in isol
 final class CreateUser
 {
     public function __construct(
-        private readonly UserRepository $users,
+        private readonly UserRepositoryInterface $users,
         private readonly Hasher $hasher,
     ) {}
 

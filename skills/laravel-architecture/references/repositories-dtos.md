@@ -265,8 +265,8 @@ use InvalidArgumentException;
 final readonly class Money
 {
     public function __construct(
-        public readonly int $amount,       // always in cents
-        public readonly string $currency,  // ISO 4217, e.g. 'USD'
+        public int $amount,       // always in cents
+        public string $currency,  // ISO 4217, e.g. 'USD'
     ) {
         if ($amount < 0) {
             throw new InvalidArgumentException("Money amount cannot be negative: {$amount}");
@@ -305,7 +305,7 @@ final readonly class Money
 ```php
 final readonly class EmailAddress
 {
-    public function __construct(public readonly string $value)
+    public function __construct(public string $value)
     {
         if (!filter_var($value, FILTER_VALIDATE_EMAIL)) {
             throw new InvalidArgumentException("Invalid email address: {$value}");
@@ -315,7 +315,7 @@ final readonly class EmailAddress
 
 final readonly class PhoneNumber
 {
-    public function __construct(public readonly string $value)
+    public function __construct(public string $value)
     {
         // E.164 format: +15551234567
         if (!preg_match('/^\+[1-9]\d{7,14}$/', $value)) {
