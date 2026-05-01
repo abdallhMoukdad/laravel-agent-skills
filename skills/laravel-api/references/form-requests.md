@@ -25,7 +25,7 @@ final class StorePostRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return $this->user()->can('create', Post::class);
+        return $this->user()?->can('create', Post::class) ?? false;
     }
 
     public function rules(): array
@@ -74,7 +74,7 @@ Check a policy action:
 ```php
 public function authorize(): bool
 {
-    return $this->user()->can('create', Post::class);
+    return $this->user()?->can('create', Post::class) ?? false;
 }
 ```
 
@@ -83,7 +83,7 @@ Check ownership of a route-bound model:
 ```php
 public function authorize(): bool
 {
-    return $this->user()->can('update', $this->route('post'));
+    return $this->user()?->can('update', $this->route('post')) ?? false;
 }
 ```
 
@@ -92,11 +92,11 @@ Gate check with additional context:
 ```php
 public function authorize(): bool
 {
-    return $this->user()->can('publish', [Post::class, $this->route('post')]);
+    return $this->user()?->can('publish', [Post::class, $this->route('post')]) ?? false;
 }
 ```
 
-When authorization must be handled by middleware instead (e.g., Spatie Permissions gate checks), throw `AuthorizationException` explicitly rather than returning `false` silently.
+Returning `false` from `authorize()` is not silent — Laravel automatically calls `failedAuthorization()`, which throws an `AuthorizationException` and produces a 403 response. Throw `AuthorizationException` manually only when you need a custom exception message or a specific response shape that differs from the default 403.
 
 ## prepareForValidation()
 

@@ -28,7 +28,7 @@ The `authorize()` method must perform a real policy check, not just `return true
 ```php
 public function authorize(): bool
 {
-    return $this->user()->can('create', Post::class);
+    return $this->user()?->can('create', Post::class) ?? false;
 }
 ```
 

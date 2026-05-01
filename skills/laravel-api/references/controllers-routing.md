@@ -29,41 +29,45 @@ use App\Http\Resources\PostResource;
 use App\Models\Post;
 use App\Services\PostService;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 
 final class PostController
 {
-    public function index(): JsonResponse
+    public function __construct(private readonly PostService $postService) {}
+
+    public function index(Request $request): JsonResponse
     {
-        $posts = Post::with('author')->cursorPaginate(20);
+        // Pagination, eager-loading, and filtering are encapsulated in the service.
+        $posts = $this->postService->paginate($request);
 
         return PostResource::collection($posts)->response();
     }
 
-    public function store(StorePostRequest $request, PostService $service): JsonResponse
+    public function store(StorePostRequest $request): JsonResponse
     {
-        $post = $service->create($request->validated());
+        $post = $this->postService->create($request->validated());
 
         return PostResource::make($post)->response()->setStatusCode(201);
     }
 
     public function show(Post $post): JsonResponse
     {
-        $post->load(['author', 'comments']);
-
+        // Route model binding resolves the model; relationship loading is handled
+        // by the service layer or a custom binding resolver — not here.
         return PostResource::make($post)->response();
     }
 
-    public function update(UpdatePostRequest $request, Post $post, PostService $service): JsonResponse
+    public function update(UpdatePostRequest $request, Post $post): JsonResponse
     {
-        $service->update($post, $request->validated());
+        $this->postService->update($post, $request->validated());
 
         return PostResource::make($post->refresh())->response();
     }
 
-    public function destroy(Post $post, PostService $service): Response
+    public function destroy(Post $post): Response
     {
-        $service->delete($post);
+        $this->postService->delete($post);
 
         return response()->noContent();
     }
