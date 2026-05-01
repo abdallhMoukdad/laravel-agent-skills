@@ -78,14 +78,13 @@ final class UserObserver
         Log::info('User updated', ['id' => $user->id, 'changes' => $user->getChanges()]);
     }
 
-    public function saving(User $user): bool|null
+    // NOTE: Observer methods cannot cancel events by returning false — the
+    // return value is silently ignored by Laravel. Use exceptions to abort.
+    public function saving(User $user): void
     {
-        // Return false to abort the save (both create and update)
         if ($user->name === 'BANNED') {
-            return false;
+            throw new \RuntimeException('Banned users cannot be saved.');
         }
-
-        return null; // continue normally
     }
 
     public function saved(User $user): void
@@ -237,7 +236,7 @@ final class UserCreatedEvent
 }
 ```
 
-Register listeners in `EventServiceProvider` or via `#[ListensTo]` on the listener class.
+Register listeners in `EventServiceProvider` or via `#[AsListener]` on the listener class.
 
 ## Critical Pitfall: `query()->update()` Does NOT Fire Observers
 
