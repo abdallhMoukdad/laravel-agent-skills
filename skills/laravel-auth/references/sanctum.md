@@ -312,9 +312,11 @@ public function test_write_token_can_create_post(): void
 ### Testing Login Endpoint
 
 ```php
+use Illuminate\Support\Facades\Hash;
+
 public function test_user_can_login_and_receive_token(): void
 {
-    $user = User::factory()->create(['password' => bcrypt('secret')]);
+    $user = User::factory()->create(['password' => Hash::make('secret')]);
 
     $response = $this->postJson('/api/auth/login', [
         'email'    => $user->email,

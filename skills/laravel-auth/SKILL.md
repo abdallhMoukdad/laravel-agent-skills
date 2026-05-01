@@ -106,11 +106,10 @@ Follow this strict rule:
 
 | Operation | Where to authorize |
 |-----------|-------------------|
-| `create`, `store` | Form Request `authorize()` |
-| `update` | Form Request `authorize()` |
-| `show`, `destroy` | Controller `$this->authorize()` |
+| `create`, `store` | Form Request `authorize()` — no model bound yet |
+| `update`, `show`, `destroy` | Controller `$this->authorize()` — model already bound via route model binding |
 
-Form Request (no model bound yet):
+Form Request (no model bound yet — `create`/`store` only):
 
 ```php
 public function authorize(): bool
@@ -119,12 +118,21 @@ public function authorize(): bool
 }
 ```
 
-Controller (model already bound via route model binding):
+Controller (model already bound via route model binding — `update`, `show`, `destroy`):
 
 ```php
 public function show(Post $post): JsonResponse
 {
     $this->authorize('view', $post);
+
+    return response()->json($post);
+}
+
+public function update(UpdatePostRequest $request, Post $post): JsonResponse
+{
+    $this->authorize('update', $post);
+
+    $post->update($request->validated());
 
     return response()->json($post);
 }
@@ -249,8 +257,6 @@ Set token lifetime in `config/sanctum.php`:
 Schedule pruning of expired tokens in `routes/console.php`:
 
 ```php
-use Laravel\Sanctum\PersonalAccessToken;
-
 Schedule::command('sanctum:prune-expired --hours=24')->daily();
 ```
 

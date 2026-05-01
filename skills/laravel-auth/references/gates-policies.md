@@ -243,7 +243,7 @@ Policies in `app/Policies/` are auto-discovered when they follow the naming conv
 | `App\Models\Order` | `App\Policies\OrderPolicy` |
 | `App\Models\User` | `App\Policies\UserPolicy` |
 
-No manual registration in `AuthServiceProvider` (or `AppServiceProvider`) is needed. The `$policies` array is no longer required in Laravel 11+.
+No manual registration is needed. `AuthServiceProvider` was removed in Laravel 11 and the `$policies` array no longer exists. Simply place the policy class in `app/Policies/` and Laravel discovers it automatically.
 
 If a custom mapping is necessary, register explicitly in `AppServiceProvider::boot()`:
 
@@ -255,7 +255,7 @@ Gate::policy(Post::class, PostPolicy::class);
 
 ## Authorizing in Controllers
 
-Use `$this->authorize()` when the model is already resolved (route model binding handles `show`, `update`, `destroy`):
+Use `$this->authorize()` when the model is already resolved by route model binding (`show`, `update`, `destroy`):
 
 ```php
 <?php
@@ -280,7 +280,8 @@ final class PostController extends Controller
 
     public function update(UpdatePostRequest $request, Post $post): JsonResponse
     {
-        // Authorization is handled in UpdatePostRequest::authorize()
+        $this->authorize('update', $post);
+
         $post->update($request->validated());
 
         return response()->json($post);
@@ -303,7 +304,7 @@ final class PostController extends Controller
 
 ## Authorizing in Form Requests
 
-Use Form Request `authorize()` for `create` and `update` operations where the policy check happens before model binding:
+Use Form Request `authorize()` only for `create` and `store` operations where no model is bound yet:
 
 ```php
 <?php
@@ -330,25 +331,9 @@ final class StorePostRequest extends FormRequest
         ];
     }
 }
-
-final class UpdatePostRequest extends FormRequest
-{
-    public function authorize(): bool
-    {
-        $post = $this->route('post');
-
-        return $this->user()?->can('update', $post) ?? false;
-    }
-
-    public function rules(): array
-    {
-        return [
-            'title' => ['sometimes', 'string', 'max:255'],
-            'body'  => ['sometimes', 'string'],
-        ];
-    }
-}
 ```
+
+For `update`, the model is already resolved by route model binding — authorize in the controller with `$this->authorize('update', $post)` instead.
 
 ---
 
