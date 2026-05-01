@@ -1,0 +1,5 @@
+{
+  "name": "laravel-agent-skills",
+  "version": "1.0.0",
+  "description": "Laravel 12 best practices skills for Claude Code. Covers Eloquent, API design, architecture, auth, queues, and testing for API-only backends."
+}
