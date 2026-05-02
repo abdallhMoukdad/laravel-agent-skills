@@ -1,7 +1,5 @@
 ## Mass Assignment Protection
 
-Mass assignment occurs when user-supplied data (e.g., a request body) is passed directly into `create()`, `update()`, or `fill()`. Without a whitelist, a user who adds unexpected keys to the request payload can overwrite any column on the model.
-
 ---
 
 ## The Exploit Scenario
@@ -187,4 +185,4 @@ $user->isGuarded('is_admin');   // true if in $guarded
 | `$guarded = ['col1']` | Blacklist — all except listed | Risky |
 | `$guarded = []` | No protection — everything fillable | Never |
 | `$guarded = ['*']` | Everything blocked | Yes — for audit/log models |
-| Neither defined | Equivalent to `$guarded = ['*']` (all guarded) | Acceptable but be explicit |
+| Neither defined | Technically `$guarded = ['*']` in Laravel 9+ — but implementation-dependent; always be explicit. | Acceptable but be explicit |

@@ -1,7 +1,5 @@
 ## Rate Limiting in Laravel
 
-Laravel's `RateLimiter` facade provides named, configurable rate limiters that integrate with route middleware. Always define named limiters in `AppServiceProvider::boot()` rather than inline `throttle:N,M` middleware — named limiters are reusable, testable, and self-documenting.
-
 ---
 
 ## Defining Named Rate Limiters
@@ -200,7 +198,9 @@ Clear the login rate limit after a successful authentication so legitimate users
 use Illuminate\Support\Facades\RateLimiter;
 
 beforeEach(function (): void {
-    RateLimiter::clear('login');
+    // The key must match the key constructed in the limiter ('login:' . $request->ip()).
+    // RateLimiter::clear('login') clears nothing — the actual cache key includes the IP.
+    RateLimiter::clear('login:127.0.0.1');
 });
 
 it('blocks after 5 failed login attempts', function (): void {
@@ -215,6 +215,10 @@ it('blocks after 5 failed login attempts', function (): void {
 });
 
 it('does not block legitimate users below the limit', function (): void {
+    // NOTE: Calling RateLimiter::for('api', ...) inside a test re-registers the named
+    // limiter globally for the entire test run, which can pollute other tests that
+    // rely on the original 'api' limiter definition. Either call it only in beforeEach
+    // with a matching restore, or use a dedicated test-scoped limiter name (e.g. 'api-test').
     RateLimiter::for('api', fn () => Limit::perMinute(120));
 
     $user = User::factory()->create();

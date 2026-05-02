@@ -225,7 +225,9 @@ Add a `X-Content-Type-Options: nosniff` header globally via middleware or the `T
 // In a middleware or global response macro
 $response->headers->set('X-Content-Type-Options', 'nosniff');
 $response->headers->set('X-Frame-Options', 'DENY');
-$response->headers->set('X-XSS-Protection', '1; mode=block');
+// Note: X-XSS-Protection is deprecated and removed from modern browsers.
+// Modern XSS protection relies on Content-Security-Policy headers instead.
+$response->headers->set('Content-Security-Policy', "default-src 'self'");
 ```
 
 For Blade-rendered applications, always use `{{ }}` (not `{!! !!}`) for any user-controlled content. Use `{!! !!}` exclusively for content that is authored internally and never touches user input.

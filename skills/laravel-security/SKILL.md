@@ -202,14 +202,14 @@ class User extends Model
 Never return raw database rows from controllers. Always transform through an API Resource.
 
 ```php
-// Wrong — exposes all columns including hidden fields depending on context
+// Wrong — exposes the full database row with no explicit output contract; bypasses field renaming, relationship control, and versioning.
 return response()->json($user);
 
 // Correct — explicit output contract
 return new UserResource($user);
 ```
 
-Never log passwords, tokens, credit card numbers, or any PII. Configure `$dontReport` and mask sensitive request parameters in `App\Http\Middleware\TrustProxies` or the exception handler.
+Never log passwords, tokens, credit card numbers, or any PII. Configure `$dontFlash` in the exception handler (via `->withExceptions()` in `bootstrap/app.php` in Laravel 11+) to prevent sensitive fields from appearing in error reports and session flashes.
 
 ---
 
@@ -235,6 +235,8 @@ public function update(UpdatePostRequest $request, Post $post): PostResource
     return new PostResource($post);
 }
 ```
+
+Policies are auto-discovered when the model and policy follow naming conventions (`PostPolicy` for `Post`, located at `app/Policies/PostPolicy.php`). For non-standard locations, register manually in `AuthServiceProvider`. Generate with `php artisan make:policy PostPolicy --model=Post`.
 
 Never skip authorization on endpoints that "feel internal." Every route that mutates data or returns user-scoped data must have an authorization check. Never gate authorization on client-supplied flags in the request body — always derive authorization from the authenticated user's actual permissions.
 
