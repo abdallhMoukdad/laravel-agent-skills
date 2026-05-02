@@ -115,6 +115,11 @@ Event::assertDispatched(OrderPlaced::class, fn (OrderPlaced $event) =>
 Event::assertDispatched(OrderPlaced::class, 1);
 
 // Assert a listener is registered for an event
+// NOTE: assertListening() only verifies that the listener is *registered* in the
+// event service provider — it does NOT confirm the listener actually ran during
+// the test. To verify a listener executed, use Event::assertDispatched() combined
+// with a side-effect assertion (e.g. database record created, mail sent), or
+// assert the queued listener job via Queue::assertPushed() for queued listeners.
 Event::assertListening(OrderPlaced::class, SendOrderConfirmation::class);
 
 // Assert nothing was dispatched

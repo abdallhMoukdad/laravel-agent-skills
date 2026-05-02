@@ -67,8 +67,7 @@ it('calculates the correct invoice total', function () {
 it('sends a welcome email after user creation', function () {
     Mail::fake();
 
-    $mailer = app(Mailer::class);
-    $mock   = $this->mock(UserRepository::class);
+    $mock = $this->mock(UserRepository::class);
     $mock->shouldReceive('create')->once()->andReturn(User::factory()->make());
 
     app(CreateUserAction::class)->run(['name' => 'Ada', 'email' => 'ada@test.com']);
@@ -124,13 +123,13 @@ See `references/faking.md` for the full faking reference covering Mail, Queue, E
 
 ## Database Strategy
 
-| Trait                  | Behaviour                                        | Use when                                   |
-|------------------------|--------------------------------------------------|--------------------------------------------|
-| `RefreshDatabase`      | Wraps each test in a transaction, rolls back     | Most feature tests — safe default          |
-| `DatabaseTransactions` | Uses a single transaction per test, rolls back   | Sequential tests with no committed-state dependency |
-| `DatabaseMigrations`   | Re-runs all migrations before every test         | **Never** — extremely slow, avoid always   |
+| Trait                  | Behaviour                                                                                               | Use when                                   |
+|------------------------|---------------------------------------------------------------------------------------------------------|--------------------------------------------|
+| `RefreshDatabase`      | Migrates the schema once; wraps each test in a transaction and rolls back — safe default for all feature tests | Most feature tests — safe default          |
+| `DatabaseTransactions` | Wraps each test in a transaction and rolls back; does not re-run migrations — requires schema to already exist, faster for large sequential suites | Sequential tests with no committed-state dependency |
+| `DatabaseMigrations`   | Re-runs all migrations before every test                                                                | **Never** — extremely slow, avoid always   |
 
-Use `RefreshDatabase` as the default. Switch to `DatabaseTransactions` when the test suite is large and tests run sequentially.
+Use `RefreshDatabase` as the default. Switch to `DatabaseTransactions` only when the schema already exists and the test suite is large and runs sequentially — it skips migration overhead but requires the database to be in the correct state beforehand.
 
 ```php
 use Illuminate\Foundation\Testing\RefreshDatabase;
