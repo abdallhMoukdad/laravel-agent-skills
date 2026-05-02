@@ -40,8 +40,10 @@ return Application::configure(basePath: dirname(__DIR__))
             AuthenticationException::class,
         ]);
 
-        // 3. Custom reporter per exception type — runs before dontReport check
-        $exceptions->report(function (PaymentException $e): void {
+        // 3. Custom reporter per exception type
+        // Note: dontReport is checked first — if PaymentGatewayException is also in dontReport,
+        // this callback will never execute. Remove it from dontReport to enable custom reporting.
+        $exceptions->report(function (PaymentGatewayException $e): void {
             \Log::channel('payments')->error($e->getMessage(), [
                 'code'  => $e->getCode(),
                 'trace' => $e->getTraceAsString(),

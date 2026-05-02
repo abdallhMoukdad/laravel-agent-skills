@@ -77,6 +77,9 @@ Add a catch-all `Throwable` renderer last to guarantee a 500 JSON response — n
 
 ```php
 $exceptions->render(function (Throwable $e, Request $request) {
+    if (config('app.debug')) {
+        return null; // let Ignition/debug handler take over in local
+    }
     return response()->json(['message' => 'An unexpected error occurred.'], 500);
 });
 ```
