@@ -56,14 +56,14 @@ Mark columns nullable with `->nullable()` only when the data is genuinely option
 
 ## Safe Schema Changes on Production Tables
 
-This is the most critical section. Applying naive schema changes to live tables causes downtime, data loss, or hard-to-detect bugs.
+Applying naive schema changes to live tables causes downtime, data loss, or hard-to-detect bugs.
 
 ### Adding a NOT NULL Column
 
-Perform across two deploys:
+Perform across exactly two deploys:
 
-1. **Deploy 1:** Add the column as `->nullable()`. The migration runs without touching existing rows.
-2. **Deploy 2:** Backfill existing rows with real data (via a job or a follow-up migration using `DB::table()->update()`). Then add a third migration that makes the column `->nullable(false)`.
+1. **Deploy 1:** Add the column as `->nullable()` with no default. The migration runs without touching existing rows.
+2. **Deploy 2:** In a single migration, backfill existing rows (via `DB::table()->whereNull('column')->update(...)`) and then call `->nullable(false)->change()` to enforce the NOT NULL constraint.
 
 ### Renaming a Column
 

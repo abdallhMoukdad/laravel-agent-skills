@@ -151,7 +151,7 @@ $table->string('currency', 3)->default('USD');
 $table->integer('retry_count')->default(0);
 ```
 
-**Do NOT use `->default()` on large production tables during an `ADD COLUMN` migration.** MySQL will rewrite the entire table to apply the default to existing rows, holding a write lock. Add the column as `->nullable()` first, backfill via a job, then add the default in a follow-up migration.
+**Do NOT use `->default()` on large production tables during an `ADD COLUMN` migration.** MySQL (< 8.0.12) will rewrite the entire table to apply the default to existing rows, holding a write lock. On MySQL 8.0.12+, `ADD COLUMN ... DEFAULT value` is instant and does not rewrite the table. Add the column as `->nullable()` first, backfill via a job, then add the default in a follow-up migration.
 
 ## Computed Columns
 
