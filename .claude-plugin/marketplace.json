@@ -12,7 +12,7 @@
       "name": "laravel-agent-skills",
       "source": "./",
       "description": "Eleven proactive skills for production-quality Laravel 12 API backends. Activates on the right cues to guide Eloquent, API, architecture, auth, queue, test, migration, exception, caching, security, and logging code.",
-      "version": "1.2.0",
+      "version": "1.4.0",
       "author": {
         "name": "abdallhMoukdad",
         "url": "https://github.com/abdallhMoukdad"
