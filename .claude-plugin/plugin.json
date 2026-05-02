@@ -1,5 +1,13 @@
 {
   "name": "laravel-agent-skills",
-  "version": "1.0.0",
-  "description": "Laravel 12 best practices skills for Claude Code. Covers Eloquent, API design, architecture, auth, queues, and testing for API-only backends."
+  "version": "1.2.0",
+  "description": "Eleven proactive skills for production-quality Laravel 12 API backends — Eloquent, API design, architecture, auth, queues, testing, migrations, exceptions, caching, security, and logging. Each skill activates automatically on the right phrases.",
+  "author": {
+    "name": "abdallhMoukdad",
+    "url": "https://github.com/abdallhMoukdad"
+  },
+  "homepage": "https://github.com/abdallhMoukdad/laravel-agent-skills",
+  "repository": "https://github.com/abdallhMoukdad/laravel-agent-skills",
+  "license": "MIT",
+  "keywords": ["laravel", "php", "api", "best-practices", "eloquent", "sanctum", "skills"]
 }

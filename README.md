@@ -26,21 +26,32 @@ A [Claude Code](https://claude.ai/code) plugin providing eleven focused, proacti
 
 ## Installation
 
-### From the Marketplace (once published)
+### Recommended: Install via Marketplace
 
-```bash
-/plugin install laravel-agent-skills@laravel
+In Claude Code, run:
+
+```text
+/plugin marketplace add abdallhMoukdad/laravel-agent-skills
+/plugin install laravel-agent-skills@laravel-agent-skills
 ```
 
-### Local Installation
+Restart Claude Code. All eleven skills are now active and will trigger automatically on relevant phrases.
 
-1. Clone this repository anywhere on your machine:
+To update later:
+
+```text
+/plugin marketplace update laravel-agent-skills
+```
+
+### Manual Installation
+
+1. Clone the repository:
 
    ```bash
    git clone https://github.com/abdallhMoukdad/laravel-agent-skills.git ~/plugins/laravel-agent-skills
    ```
 
-2. Open your Claude Code settings (`~/.claude/settings.json`) and add the plugin directory:
+2. Add the plugin directory to `~/.claude/settings.json`:
 
    ```json
    {
@@ -50,7 +61,7 @@ A [Claude Code](https://claude.ai/code) plugin providing eleven focused, proacti
    }
    ```
 
-3. Restart Claude Code. The eleven skills will now be available automatically.
+3. Restart Claude Code.
 
 ---
 
