@@ -128,15 +128,18 @@ Use `tap` to attach a custom class that modifies the underlying Monolog handler 
 namespace App\Logging;
 
 use Illuminate\Log\Logger;
+use Monolog\LogRecord;
 
 final class AddAppVersionProcessor
 {
     public function __invoke(Logger $logger): void
     {
         foreach ($logger->getHandlers() as $handler) {
-            $handler->pushProcessor(function (array $record): array {
-                $record['extra']['app_version'] = config('app.version');
-                return $record;
+            // Monolog 3 (Laravel 12): LogRecord is immutable — use ->with() to return a modified copy
+            $handler->pushProcessor(function (LogRecord $record): LogRecord {
+                return $record->with(extra: array_merge($record->extra, [
+                    'app_version' => config('app.version'),
+                ]));
             });
         }
     }

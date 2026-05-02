@@ -106,7 +106,8 @@ function maskEmail(string $email): string
     return substr($local, 0, 2) . str_repeat('*', max(strlen($local) - 2, 1)) . '@' . $domain;
 }
 
-// 'john.smith@example.com' → 'jo**@example.com'
+// 'jo@example.com'   → 'j*@example.com'
+// 'user@example.com' → 'us**@example.com'
 Log::info('auth.login_failed', ['email' => maskEmail($email)]);
 ```
 
@@ -217,19 +218,34 @@ if ($user->id % 100 < 10) {
 
 ---
 
-## Testing with `Log::fake()` — All Assertions
+## Testing Log Calls
 
-Call `Log::fake()` in `beforeEach()` or at the top of a test. It intercepts all log calls and prevents any real writes.
+Laravel 12 core does **not** provide `Log::fake()`, `Log::assertLogged()`, or any built-in log assertion API. Use one of the two approaches below.
+
+---
+
+### Option A — `spatie/laravel-log-fake` (recommended for most projects)
+
+Install the package as a dev dependency:
+
+```bash
+composer require spatie/laravel-log-fake --dev
+```
+
+Then swap the Log facade with a `FakeLogger` in your test setup:
 
 ```php
 use Illuminate\Support\Facades\Log;
+use Spatie\LaravelLogFake\FakeLogger;
 
 beforeEach(function (): void {
-    Log::fake();
+    Log::swap(new FakeLogger());
 });
 ```
 
-### `assertLogged`
+Available assertions:
+
+#### `assertLogged`
 
 At least one entry at the given level matches the callback:
 
@@ -239,7 +255,15 @@ Log::assertLogged('info', fn (string $message, array $context): bool
 );
 ```
 
-### `assertLoggedTimes`
+#### `assertLoggedMessage`
+
+Assert a specific message was logged at a given level (no callback needed):
+
+```php
+Log::assertLoggedMessage('info', 'order.placed');
+```
+
+#### `assertLoggedTimes`
 
 Exactly `$times` entries at the level match:
 
@@ -249,7 +273,7 @@ Log::assertLoggedTimes('warning', 3, fn (string $message): bool
 );
 ```
 
-### `assertNotLogged`
+#### `assertNotLogged`
 
 No entries at the level match the callback:
 
@@ -259,7 +283,7 @@ Log::assertNotLogged('info', fn (string $message, array $context): bool
 );
 ```
 
-### `assertNothingLogged`
+#### `assertNothingLogged`
 
 No log calls were made at all:
 
@@ -267,7 +291,7 @@ No log calls were made at all:
 Log::assertNothingLogged();
 ```
 
-### Asserting a specific channel
+#### Asserting a specific channel
 
 ```php
 Log::channel('audit')->assertLogged('info', fn (string $message, array $context): bool
@@ -275,15 +299,43 @@ Log::channel('audit')->assertLogged('info', fn (string $message, array $context)
 );
 ```
 
-### Full test example
+---
+
+### Option B — Laravel built-in, no package (using `Event::fake` on `MessageLogged`)
+
+If you prefer not to add the dev dependency, you can listen to the `MessageLogged` event that Monolog fires on every log call:
+
+```php
+use Illuminate\Log\Events\MessageLogged;
+use Illuminate\Support\Facades\Event;
+
+it('logs order.placed at info level', function (): void {
+    Event::fake([MessageLogged::class]);
+
+    placeOrder($order);
+
+    Event::assertDispatched(MessageLogged::class, function ($event) use ($order): bool {
+        return $event->level === 'info'
+            && $event->message === 'order.placed'
+            && ($event->context['order_id'] ?? null) === $order->id;
+    });
+});
+```
+
+`Event::fake()` is a Laravel core feature and requires no extra package.
+
+---
+
+### Full test example (Option A — `spatie/laravel-log-fake`)
 
 ```php
 use App\Services\OrderService;
 use App\Models\Order;
 use Illuminate\Support\Facades\Log;
+use Spatie\LaravelLogFake\FakeLogger;
 
 beforeEach(function (): void {
-    Log::fake();
+    Log::swap(new FakeLogger());
 });
 
 it('logs order.placed at info level with correct context', function (): void {

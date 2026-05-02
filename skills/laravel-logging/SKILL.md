@@ -50,9 +50,9 @@ Use dot-notation event names as the message string. They are stable identifiers 
 
 ---
 
-## Request-Scoped Context with `Log::withContext()`
+## Request-Scoped Context with `Log::shareContext()`
 
-Call `Log::withContext()` once per request in middleware rather than repeating shared context on every individual log call. Context set this way is automatically merged into every subsequent log entry for the lifetime of that request.
+Call `Log::shareContext()` once per request in middleware rather than repeating shared context on every individual log call. Context set this way is automatically merged into every subsequent log entry **across all channels** for the lifetime of that request.
 
 ```php
 <?php
@@ -69,7 +69,9 @@ final class LogContext
 {
     public function handle(Request $request, Closure $next): Response
     {
-        Log::withContext([
+        // shareContext() — applies to ALL channels (including audit, slack, etc.)
+        // withContext() — applies only to the default channel
+        Log::shareContext([
             'request_id' => Str::uuid()->toString(),
             'user_id'    => $request->user()?->id,
             'ip'         => $request->ip(),
@@ -198,8 +200,10 @@ Log::channel('audit')->info('auth.login', [
     'success' => true,
 ]);
 
+// Audit channels may log masked PII under appropriate retention/access policies.
+// Always apply maskEmail() or equivalent when in doubt.
 Log::channel('audit')->warning('auth.login_failed', [
-    'email'   => $request->input('email'),
+    'email'   => maskEmail($request->input('email', '')),
     'ip'      => $request->ip(),
     'reason'  => 'invalid_password',
 ]);
@@ -247,13 +251,22 @@ The same rule applies to helpers, traits, and form requests — log in the servi
 
 ## Testing Logs
 
-Use `Log::fake()` in tests to assert log calls without hitting the filesystem or any real driver.
+Laravel 12 core does **not** provide `Log::fake()`, `Log::assertLogged()`, or any built-in log assertion API. Use one of the two approaches below.
+
+### Option A — `spatie/laravel-log-fake` (recommended)
+
+Provides a clean assertion API. Install as a dev dependency:
+
+```bash
+composer require spatie/laravel-log-fake --dev
+```
 
 ```php
 use Illuminate\Support\Facades\Log;
+use Spatie\LaravelLogFake\FakeLogger;
 
 beforeEach(function (): void {
-    Log::fake();
+    Log::swap(new FakeLogger());
 });
 
 it('logs order.placed at info level', function (): void {
@@ -261,7 +274,10 @@ it('logs order.placed at info level', function (): void {
 
     placeOrder($order);
 
-    // Assert a specific message was logged
+    // Assert a specific message was logged at a level
+    Log::assertLoggedMessage('info', 'order.placed');
+
+    // Assert with context inspection
     Log::assertLogged('info', fn (string $message, array $context): bool
         => $message === 'order.placed' && $context['order_id'] === $order->id
     );
@@ -276,17 +292,39 @@ it('does not log sensitive data', function (): void {
 });
 
 it('logs to the audit channel on login', function (): void {
-    Log::assertLoggedInStack('audit', 'info', fn (string $message): bool
+    login(User::factory()->create());
+
+    Log::channel('audit')->assertLogged('info', fn (string $message, array $context): bool
         => $message === 'auth.login'
     );
 });
 ```
 
-Available assertions:
+Available assertions (from `spatie/laravel-log-fake`):
 - `Log::assertLogged($level, $callback)` — at least one entry matches
+- `Log::assertLoggedMessage($level, $message)` — at least one entry with that exact message
 - `Log::assertLoggedTimes($level, $times, $callback)` — exact count
 - `Log::assertNotLogged($level, $callback)` — no matching entry
 - `Log::assertNothingLogged()` — no log calls at all
+
+### Option B — Laravel built-in, no package (using `Event::fake` on `MessageLogged`)
+
+```php
+use Illuminate\Log\Events\MessageLogged;
+use Illuminate\Support\Facades\Event;
+
+it('logs order.placed at info level', function (): void {
+    Event::fake([MessageLogged::class]);
+
+    placeOrder($order);
+
+    Event::assertDispatched(MessageLogged::class, function ($event) use ($order): bool {
+        return $event->level === 'info'
+            && $event->message === 'order.placed'
+            && ($event->context['order_id'] ?? null) === $order->id;
+    });
+});
+```
 
 ---
 
@@ -294,4 +332,4 @@ Available assertions:
 
 - `references/channels.md` — Complete `config/logging.php` reference covering all channel drivers, the `tap` key, log stacks, environment-specific switching, and the `LOG_CHANNEL` variable.
 - `references/structured-logging.md` — Deep dive on structured logging: `withContext()` middleware pattern, request ID propagation, context in queued jobs, `shareContext()` vs `withContext()`, Monolog processors, and formatting for external log aggregators.
-- `references/log-hygiene.md` — What never to log, masking/redacting helpers, correct PSR-3 level selection for real scenarios, performance considerations, log volume sampling, and all `Log::fake()` assertion methods with examples.
+- `references/log-hygiene.md` — What never to log, masking/redacting helpers, correct PSR-3 level selection for real scenarios, performance considerations, log volume sampling, and log assertion approaches (both `spatie/laravel-log-fake` and `Event::fake` options) with examples.

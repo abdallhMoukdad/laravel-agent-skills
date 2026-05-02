@@ -19,9 +19,9 @@ Use dot-notation event names for messages (`order.placed`, `payment.failed`, `au
 
 ---
 
-## `Log::withContext()` — Per-Request Context
+## `Log::shareContext()` — Per-Request Context in Middleware
 
-`Log::withContext()` merges fields into every log entry written during the current request lifecycle. Call it once in middleware; every subsequent `Log::info()`, `Log::error()`, etc., in that request automatically includes those fields.
+`Log::shareContext()` merges fields into every log entry across **all channels** for the current request lifecycle. Use this in middleware rather than `Log::withContext()`, which only applies to the default channel and will not propagate to named channels like `audit` or `slack`. Call it once; every subsequent `Log::info()`, `Log::error()`, etc., in that request automatically includes those fields.
 
 ```php
 <?php
@@ -38,7 +38,9 @@ final class LogContext
 {
     public function handle(Request $request, Closure $next): Response
     {
-        Log::withContext([
+        // shareContext() — applies to ALL channels (including audit, slack, etc.)
+        // withContext() — applies only to the default channel
+        Log::shareContext([
             'request_id' => $request->headers->get('X-Request-Id') ?? Str::uuid()->toString(),
             'user_id'    => $request->user()?->id,
             'ip'         => $request->ip(),
@@ -80,7 +82,9 @@ public function handle(Request $request, Closure $next): Response
 {
     $requestId = $request->headers->get('X-Request-Id') ?? Str::uuid()->toString();
 
-    Log::withContext(['request_id' => $requestId]);
+    // shareContext() — applies to ALL channels (including audit, slack, etc.)
+    // withContext() — applies only to the default channel
+    Log::shareContext(['request_id' => $requestId]);
 
     $response = $next($request);
     $response->headers->set('X-Request-Id', $requestId);
@@ -114,7 +118,9 @@ public function boot(): void
 
 ## Context Inheritance in Queued Jobs
 
-Context set via `Log::withContext()` in an HTTP request does not automatically carry over to queued jobs dispatched during that request. Use the `context()` method on the job to pass context explicitly.
+Context set via `Log::shareContext()` in an HTTP request does not automatically carry over to queued jobs dispatched during that request — unless you use the `Context` facade (see below). The manual pattern is to pass context via constructor and re-establish it inside `handle()`:
+
+> **Prefer the `Context` facade (Laravel 11+)** — see the next section. It propagates automatically without constructor boilerplate.
 
 ```php
 <?php
@@ -161,7 +167,54 @@ Dispatch with context:
 ProcessOrder::dispatch($order->id, $requestId);
 ```
 
-Laravel 11+ jobs also support the `context()` method on a `WithFaker` or context trait — check the version you are on and use whichever is available.
+---
+
+## The Context Facade (Laravel 11+)
+
+Laravel 11 introduced the `Illuminate\Support\Facades\Context` facade as the preferred way to propagate request context across log entries **and** queued jobs without any constructor boilerplate.
+
+### Setting context in middleware
+
+```php
+use Illuminate\Support\Facades\Context;
+use Illuminate\Support\Str;
+
+// In middleware — set once, propagates to all log entries AND all dispatched jobs automatically
+Context::add('request_id', (string) Str::uuid());
+Context::add('user_id', $request->user()?->id);
+```
+
+### What `Context::add()` does automatically
+
+- **Appears in all log entries** via the built-in `ContextLogProcessor` — across ALL channels, not just the default channel.
+- **Propagates to dispatched queued jobs** — the context is serialized into the job payload and restored on the worker process. No constructor passing required.
+
+### Hidden context
+
+```php
+// addHidden() — propagates to queued jobs but does NOT appear in log entries
+// Use for sensitive values you need in jobs but must not leak into logs
+Context::addHidden('auth_token', $request->bearerToken());
+```
+
+### Retrieving context values
+
+```php
+Context::get('request_id');   // single key
+Context::all();               // all visible context as array
+Context::allHidden();         // all hidden context as array
+```
+
+### When to use `Context::add()` vs `Log::shareContext()`
+
+| | `Context::add()` | `Log::shareContext()` |
+|---|---|---|
+| Appears in log entries | Yes (all channels) | Yes (all channels) |
+| Propagates to queued jobs | Yes, automatically | No |
+| Persists across process lifetime | No (per-request) | Yes (entire process) |
+| Hidden variant available | Yes (`addHidden`) | No |
+
+**Rule of thumb:** Use `Context::add()` in middleware for request-scoped data (request ID, user ID). Use `Log::shareContext()` in a service provider for process-level constants (app version, hostname, environment).
 
 ---
 
@@ -174,14 +227,18 @@ Register processors globally via `tap` on a channel (see `channels.md`) or by pu
 ```php
 // app/Providers/AppServiceProvider.php
 
+use Monolog\LogRecord;
+
 public function boot(): void
 {
     /** @var \Monolog\Logger $monolog */
     $monolog = Log::getLogger();
 
-    $monolog->pushProcessor(function (array $record): array {
-        $record['extra']['memory_mb'] = round(memory_get_usage(true) / 1024 / 1024, 2);
-        return $record;
+    // Monolog 3 (Laravel 12): LogRecord is immutable — use ->with() to return a modified copy
+    $monolog->pushProcessor(function (LogRecord $record): LogRecord {
+        return $record->with(extra: array_merge($record->extra, [
+            'memory_mb' => round(memory_get_usage(true) / 1024 / 1024, 2),
+        ]));
     });
 }
 ```
