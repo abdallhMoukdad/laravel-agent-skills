@@ -169,7 +169,7 @@ declare(strict_types=1);
 namespace App\Listeners;
 
 use App\Events\OrderPlaced;
-use Illuminate\Queue\Attributes\AsListener;
+use Illuminate\Events\Attributes\AsListener;
 
 #[AsListener(OrderPlaced::class)]
 final class NotifyWarehouse
@@ -186,11 +186,11 @@ final class NotifyWarehouse
 Return `false` from a listener's `handle()` method to prevent subsequent listeners from receiving the event:
 
 ```php
-public function handle(OrderPlaced $event): false|void
+public function handle(OrderPlaced $event): void
 {
     if ($event->order->isFraudulent()) {
         $event->order->flag();
-        return false; // no further listeners run
+        return false; // returning false stops propagation — no further listeners run
     }
 }
 ```
@@ -242,10 +242,16 @@ final class OrderEventSubscriber
 }
 ```
 
-Register the subscriber in a service provider:
+Register the subscriber in `AppServiceProvider::boot()` (Laravel 12 does not have a standalone `EventServiceProvider`):
 
 ```php
-Event::subscribe(OrderEventSubscriber::class);
+// app/Providers/AppServiceProvider.php
+use Illuminate\Support\Facades\Event;
+
+public function boot(): void
+{
+    Event::subscribe(OrderEventSubscriber::class);
+}
 ```
 
 ---

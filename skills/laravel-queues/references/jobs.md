@@ -69,18 +69,23 @@ final class ProcessInvoice implements ShouldQueue, ShouldBeUnique
 }
 ```
 
-### When `SerializesModels` Is Appropriate With a Model Instance
+### Storing a Model Instance — Last Resort Only
 
-Storing a model instance (not just an ID) is acceptable when:
-- The model is small, has no lazy-loaded relations, and will not change between dispatch and execution.
-- You want `$this->invoice` auto-refreshed by `SerializesModels` without an explicit `findOrFail`.
-
-Trade-off: the full serialized model (including all attributes at dispatch time) is stored in the queue payload. For models with many columns or binary fields, this is wasteful. On high-throughput queues the payload size matters.
+Always prefer storing an ID. `SerializesModels` will fetch a fresh instance at runtime and there is no payload bloat or stale-data risk:
 
 ```php
-// Acceptable for small, stable models — SerializesModels re-fetches it
+// Preferred in all cases
+public function __construct(public readonly int $invoiceId) {}
+```
+
+Storing a model instance directly is only acceptable when working with third-party events or vendor code where you have no control over the constructor and cannot pass an ID:
+
+```php
+// Last resort — only when you cannot change the constructor signature
 public function __construct(public readonly Invoice $invoice) {}
 ```
+
+Even then, be aware that the full serialized model (all attributes at dispatch time) is stored in the queue payload. For models with many columns or binary fields this is wasteful, and on high-throughput queues the payload size matters.
 
 ---
 

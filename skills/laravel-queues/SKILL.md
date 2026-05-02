@@ -67,10 +67,6 @@ Use `ShouldBeUnique` on jobs that must not run concurrently for the same resourc
 
 Use `ShouldBeUniqueUntilProcessing` instead when the next dispatch should be allowed to queue while the current job is actively processing — the lock releases at the start of execution rather than at completion.
 
-### After-Commit Dispatch
-
-When a job must be dispatched but the current scope is inside a transaction controlled by another service, prefer `ShouldBeDispatchedAfterCommit` on the job class to enforce the after-commit guarantee automatically rather than requiring every call site to chain `->afterCommit()`.
-
 ---
 
 ## Events and Listeners
