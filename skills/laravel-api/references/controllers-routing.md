@@ -177,12 +177,13 @@ public function show(Post $post): JsonResponse
 
 ### Scoped Nested Binding
 
-In nested resource routes, Laravel automatically scopes the child binding to the parent — the `{post}` must belong to `{user}`:
+By default, nested route bindings are NOT scoped to the parent — child IDs are looked up globally. Call `->scoped()` (or `->scopeBindings()` on individual routes) to enforce that the child belongs to the parent:
 
 ```php
-Route::apiResource('users.posts', UserPostController::class);
+Route::apiResource('users.posts', UserPostController::class)
+    ->scoped(['post' => 'slug']); // or just ->scoped()
 
-// Laravel verifies that $post->user_id === $user->id automatically.
+// Now Laravel verifies that $post->user_id === $user->id.
 public function show(User $user, Post $post): JsonResponse
 {
     return PostResource::make($post)->response();

@@ -220,66 +220,62 @@ if ($user->id % 100 < 10) {
 
 ## Testing Log Calls
 
-Laravel 12 core does **not** provide `Log::fake()`, `Log::assertLogged()`, or any built-in log assertion API. Use one of the two approaches below.
+Laravel 12 core does **not** provide a `Log` test fake or any built-in log assertion API. Use one of the two approaches below.
 
 ---
 
-### Option A — `spatie/laravel-log-fake` (recommended for most projects)
+### Option A — `timacdonald/log-fake` (recommended for most projects)
 
 Install the package as a dev dependency:
 
 ```bash
-composer require spatie/laravel-log-fake --dev
+composer require timacdonald/log-fake --dev
 ```
 
-Then swap the Log facade with a `FakeLogger` in your test setup:
+Then bind the fake in your test setup:
 
 ```php
 use Illuminate\Support\Facades\Log;
-use Spatie\LaravelLogFake\FakeLogger;
+use TiMacDonald\Log\LogFake;
+use TiMacDonald\Log\LogEntry;
 
 beforeEach(function (): void {
-    Log::swap(new FakeLogger());
+    LogFake::bind();
 });
 ```
 
-Available assertions:
+Available assertions. Each takes a closure receiving a `LogEntry` with `level`, `message`, and `context` properties.
 
 #### `assertLogged`
 
-At least one entry at the given level matches the callback:
+At least one entry matches the callback:
 
 ```php
-Log::assertLogged('info', fn (string $message, array $context): bool
-    => $message === 'order.placed' && $context['order_id'] === 42
+Log::assertLogged(fn (LogEntry $log) =>
+    $log->level === 'info'
+    && $log->message === 'order.placed'
+    && $log->context['order_id'] === 42
 );
-```
-
-#### `assertLoggedMessage`
-
-Assert a specific message was logged at a given level (no callback needed):
-
-```php
-Log::assertLoggedMessage('info', 'order.placed');
 ```
 
 #### `assertLoggedTimes`
 
-Exactly `$times` entries at the level match:
+Exactly `$count` entries match. Signature is `(callable $callback, int $count)` — note: no level argument:
 
 ```php
-Log::assertLoggedTimes('warning', 3, fn (string $message): bool
-    => $message === 'api.retry'
+Log::assertLoggedTimes(
+    fn (LogEntry $log) => $log->message === 'api.retry',
+    3
 );
 ```
 
 #### `assertNotLogged`
 
-No entries at the level match the callback:
+No entries match the callback:
 
 ```php
-Log::assertNotLogged('info', fn (string $message, array $context): bool
-    => isset($context['password'])
+Log::assertNotLogged(fn (LogEntry $log) =>
+    $log->level === 'info' && isset($log->context['password'])
 );
 ```
 
@@ -294,10 +290,14 @@ Log::assertNothingLogged();
 #### Asserting a specific channel
 
 ```php
-Log::channel('audit')->assertLogged('info', fn (string $message, array $context): bool
-    => $message === 'auth.login' && $context['user_id'] === $user->id
+Log::channel('audit')->assertLogged(fn (LogEntry $log) =>
+    $log->level === 'info'
+    && $log->message === 'auth.login'
+    && $log->context['user_id'] === $user->id
 );
 ```
+
+Note: `Log::assertLoggedMessage()` does not exist in this package. Use the closure form of `assertLogged()` and inspect `$log->message`.
 
 ---
 
@@ -326,16 +326,17 @@ it('logs order.placed at info level', function (): void {
 
 ---
 
-### Full test example (Option A — `spatie/laravel-log-fake`)
+### Full test example (Option A — `timacdonald/log-fake`)
 
 ```php
 use App\Services\OrderService;
 use App\Models\Order;
 use Illuminate\Support\Facades\Log;
-use Spatie\LaravelLogFake\FakeLogger;
+use TiMacDonald\Log\LogFake;
+use TiMacDonald\Log\LogEntry;
 
 beforeEach(function (): void {
-    Log::swap(new FakeLogger());
+    LogFake::bind();
 });
 
 it('logs order.placed at info level with correct context', function (): void {
@@ -344,10 +345,11 @@ it('logs order.placed at info level with correct context', function (): void {
 
     $service->place($order);
 
-    Log::assertLogged('info', fn (string $message, array $context): bool
-        => $message === 'order.placed'
-        && $context['order_id'] === $order->id
-        && $context['total'] === 99.00
+    Log::assertLogged(fn (LogEntry $log) =>
+        $log->level === 'info'
+        && $log->message === 'order.placed'
+        && $log->context['order_id'] === $order->id
+        && $log->context['total'] === 99.00
     );
 });
 
@@ -357,8 +359,8 @@ it('does not log the user email', function (): void {
 
     $service->place($order);
 
-    Log::assertNotLogged('info', fn (string $message, array $context): bool
-        => array_key_exists('email', $context)
+    Log::assertNotLogged(fn (LogEntry $log) =>
+        $log->level === 'info' && array_key_exists('email', $log->context)
     );
 });
 
@@ -367,8 +369,10 @@ it('logs a warning when the payment is retried', function (): void {
 
     $service->retryPayment($orderId = 99);
 
-    Log::assertLogged('warning', fn (string $message, array $context): bool
-        => $message === 'payment.retrying' && $context['order_id'] === $orderId
+    Log::assertLogged(fn (LogEntry $log) =>
+        $log->level === 'warning'
+        && $log->message === 'payment.retrying'
+        && $log->context['order_id'] === $orderId
     );
 });
 
@@ -377,8 +381,10 @@ it('writes audit entry on login', function (): void {
 
     login($user);
 
-    Log::channel('audit')->assertLogged('info', fn (string $message, array $context): bool
-        => $message === 'auth.login' && $context['user_id'] === $user->id
+    Log::channel('audit')->assertLogged(fn (LogEntry $log) =>
+        $log->level === 'info'
+        && $log->message === 'auth.login'
+        && $log->context['user_id'] === $user->id
     );
 });
 
@@ -388,8 +394,8 @@ it('does not write to default channel for audit events', function (): void {
     login($user);
 
     // Audit events must not bleed into the default log
-    Log::assertNotLogged('info', fn (string $message): bool
-        => $message === 'auth.login'
+    Log::assertNotLogged(fn (LogEntry $log) =>
+        $log->level === 'info' && $log->message === 'auth.login'
     );
 });
 ```

@@ -195,12 +195,19 @@ Clear the login rate limit after a successful authentication so legitimate users
 ## Testing Rate Limiters
 
 ```php
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\RateLimiter;
 
 beforeEach(function (): void {
-    // The key must match the key constructed in the limiter ('login:' . $request->ip()).
-    // RateLimiter::clear('login') clears nothing — the actual cache key includes the IP.
-    RateLimiter::clear('login:127.0.0.1');
+    // The ThrottleRequests middleware hashes limiter keys by default
+    // (md5($limiterName . $limit->key)), so calls like
+    //   RateLimiter::clear('login:127.0.0.1')
+    // miss the actual cache entry and clear nothing. Flush the cache instead.
+    Cache::flush();
+
+    // Alternative: disable key hashing in setUp, then per-key clear works:
+    //   \Illuminate\Routing\Middleware\ThrottleRequests::shouldHashKeys(false);
+    //   RateLimiter::clear('login:127.0.0.1');
 });
 
 it('blocks after 5 failed login attempts', function (): void {

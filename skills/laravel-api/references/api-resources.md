@@ -63,14 +63,19 @@ Include a field with a default fallback:
 ),
 ```
 
-Use `$this->mergeWhen()` to conditionally merge multiple keys at once:
+Use `$this->mergeWhen()` to conditionally merge multiple keys at once. Place the call at a numeric (un-keyed) array position — Laravel's resource `filter()` detects the `MergeValue` and merges automatically. Do NOT spread it with `...`; `MergeValue` is not Traversable and spreading throws a fatal error.
 
 ```php
-...$this->mergeWhen($request->user()?->isAdmin(), [
-    'admin_notes'   => $this->admin_notes,
-    'internal_id'   => $this->internal_id,
-    'flagged'       => $this->flagged,
-]),
+return [
+    'id'    => $this->id,
+    'title' => $this->title,
+    $this->mergeWhen($request->user()?->isAdmin(), [
+        'admin_notes' => $this->admin_notes,
+        'internal_id' => $this->internal_id,
+        'flagged'     => $this->flagged,
+    ]),
+    'created_at' => $this->created_at,
+];
 ```
 
 ## $this->whenLoaded() — Safe Relationship Access
@@ -222,18 +227,14 @@ public function toArray(Request $request): array
 
 By default, all Resources wrap their output in a `data` key. This is the expected behavior and provides a consistent JSON contract.
 
-Disable wrapping globally only in exceptional circumstances, such as integrating with a legacy client that cannot tolerate the `data` wrapper. Global disabling affects every resource in the application.
+`JsonResource::withoutWrapping()` is a static method that mutates global state (`static::$wrap = null`). Calling it on a specific resource class disables wrapping for every response from that class for the rest of the request lifecycle.
 
 ```php
-// Use sparingly — in AppServiceProvider::boot() only if absolutely required
-JsonResource::withoutWrapping();
+// Disables the 'data' wrapping globally for this resource class:
+PostResource::withoutWrapping();
 ```
 
-Disable wrapping on a single resource response:
-
-```php
-PostResource::make($post)->withoutWrapping();
-```
+There is no per-instance way to disable wrapping. For a single response, build a custom shape with `additional()` or override `toResponse()`.
 
 ## Customizing the HTTP Response
 
@@ -290,8 +291,8 @@ final class PostResource extends JsonResource
                 $this->admin_notes,
             ),
 
-            // Conditional merge
-            ...$this->mergeWhen($request->user()?->isAdmin(), [
+            // Conditional merge — placed at a numeric position; do NOT spread
+            $this->mergeWhen($request->user()?->isAdmin(), [
                 'internal_flags' => $this->internal_flags,
                 'flagged'        => $this->flagged,
             ]),

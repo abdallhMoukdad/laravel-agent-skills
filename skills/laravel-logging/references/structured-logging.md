@@ -95,24 +95,24 @@ public function handle(Request $request, Closure $next): Response
 
 ---
 
-## `Log::shareContext()` — Application-Wide Permanent Context
+## `Log::shareContext()` — Context Across All Channels
 
-`Log::shareContext()` sets context fields that persist for the entire application lifetime — not just the current request. Use it in a service provider for fields that never change per-process (app version, environment, host name).
+`Log::shareContext()` and `Log::withContext()` are both request-scoped — neither persists across requests. The real distinction is which channels they apply to:
+
+- `Log::withContext([...])` — applies to the **default channel only** (current request)
+- `Log::shareContext([...])` — applies to **all channels** (current request)
+
+In HTTP both are reset per request. Use `shareContext()` in middleware for fields you want included in every channel (including dedicated `audit`/`slack` channels) for that request.
 
 ```php
-// app/Providers/AppServiceProvider.php
-
-public function boot(): void
-{
-    Log::shareContext([
-        'app_version' => config('app.version'),
-        'environment' => app()->environment(),
-        'hostname'    => gethostname(),
-    ]);
-}
+// In middleware — applies to every channel for this request
+Log::shareContext([
+    'request_id'  => $requestId,
+    'environment' => app()->environment(),
+]);
 ```
 
-`shareContext()` is additive and permanent. `withContext()` is request-scoped and merges on top of shared context. Both are included in every log entry automatically.
+For request-to-queue propagation (where context must survive into a worker process), use the `Context` facade — see the next section.
 
 ---
 
@@ -205,16 +205,18 @@ Context::all();               // all visible context as array
 Context::allHidden();         // all hidden context as array
 ```
 
-### When to use `Context::add()` vs `Log::shareContext()`
+### When to use `Context::add()` vs `Log::shareContext()` vs `Log::withContext()`
 
-| | `Context::add()` | `Log::shareContext()` |
-|---|---|---|
-| Appears in log entries | Yes (all channels) | Yes (all channels) |
-| Propagates to queued jobs | Yes, automatically | No |
-| Persists across process lifetime | No (per-request) | Yes (entire process) |
-| Hidden variant available | Yes (`addHidden`) | No |
+| | `Context::add()` | `Log::shareContext()` | `Log::withContext()` |
+|---|---|---|---|
+| Appears in log entries | Yes (all channels) | Yes (all channels) | Default channel only |
+| Propagates to queued jobs | Yes, automatically | No | No |
+| Scope | Per-request (auto-restored in jobs) | Per-request | Per-request |
+| Hidden variant available | Yes (`addHidden`) | No | No |
 
-**Rule of thumb:** Use `Context::add()` in middleware for request-scoped data (request ID, user ID). Use `Log::shareContext()` in a service provider for process-level constants (app version, hostname, environment).
+None of these persist across HTTP requests. For request-to-queue propagation, use `Context::add()`.
+
+**Rule of thumb:** Use `Context::add()` in middleware when context must survive into a queued job. Use `Log::shareContext()` when you only need cross-channel context within the current request. Use `Log::withContext()` when the context is only relevant to the default channel.
 
 ---
 

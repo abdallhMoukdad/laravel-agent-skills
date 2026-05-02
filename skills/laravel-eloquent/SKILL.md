@@ -113,16 +113,17 @@ protected function fullName(): Attribute
             $attributes['first_name'] . ' ' . $attributes['last_name'],
     );
 }
-
-protected function password(): Attribute
-{
-    return Attribute::make(
-        set: fn(string $value): string => bcrypt($value),
-    );
-}
 ```
 
-Prefer `$casts` over accessors for simple type transformations (dates, booleans, enums). Create custom cast classes implementing `CastsAttributes` for value objects and complex types.
+For password hashing, use the built-in `'hashed'` cast (Laravel 10+) instead of a hand-rolled mutator:
+
+```php
+protected $casts = [
+    'password' => 'hashed',
+];
+```
+
+Prefer `$casts` over accessors for simple type transformations (dates, booleans, enums, hashed passwords). Create custom cast classes implementing `CastsAttributes` for value objects and complex types.
 
 ```php
 use Illuminate\Contracts\Database\Eloquent\CastsAttributes;

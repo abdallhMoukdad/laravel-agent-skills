@@ -99,7 +99,7 @@ Aggregates multiple channels into one. Writing to the `stack` channel fans out t
 
 ### `null`
 
-Discards all log entries. Use in tests where `Log::fake()` is not available, or to silence a noisy third-party package.
+Discards all log entries. Use in tests where a Log fake is not available, or to silence a noisy third-party package.
 
 ```php
 'null' => [

@@ -244,7 +244,7 @@ Always prefix keys with an application or environment identifier when multiple a
 
 ## Testing
 
-`Cache::fake()` and its assertion methods (`assertStored`, `assertMissing`, `assertHas`, `assertForgotten`) do not exist in Laravel 12. Use one of the two approaches below instead.
+A built-in `Cache` test fake (and assertion methods like `assertStored`, `assertMissing`, `assertHas`, `assertForgotten`) does not exist in Laravel 12. Use one of the two approaches below instead.
 
 ### Option A — Array driver (preferred for integration tests)
 

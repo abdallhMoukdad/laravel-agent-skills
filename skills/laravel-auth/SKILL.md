@@ -10,13 +10,13 @@ version: 1.0.0
 
 Always use Sanctum for API authentication. Never roll a custom auth system.
 
-Install and configure Sanctum:
+Install and configure Sanctum. On Laravel 11+ use the canonical command, which installs Sanctum, publishes the migration, creates `routes/api.php`, and registers the API routes:
 
 ```bash
-composer require laravel/sanctum
-php artisan vendor:publish --provider="Laravel\Sanctum\SanctumServiceProvider"
-php artisan migrate
+php artisan install:api
 ```
+
+The older `composer require laravel/sanctum && php artisan vendor:publish ... && php artisan migrate` sequence still works but is no longer needed.
 
 ### Token Auth (Mobile Apps and Third-Party Clients)
 
@@ -107,7 +107,9 @@ Follow this strict rule:
 | Operation | Where to authorize |
 |-----------|-------------------|
 | `create`, `store` | Form Request `authorize()` — no model bound yet |
-| `update`, `show`, `destroy` | Controller `$this->authorize()` — model already bound via route model binding |
+| `update`, `show`, `destroy` | Controller `Gate::authorize()` — model already bound via route model binding |
+
+> Note: Laravel 11+ removed `AuthorizesRequests` from the default `App\Http\Controllers\Controller`. Use `Gate::authorize(...)` instead, or add `use AuthorizesRequests;` to your base controller if you prefer the trait form (`$this->authorize(...)`).
 
 Form Request (no model bound yet — `create`/`store` only):
 
@@ -121,16 +123,18 @@ public function authorize(): bool
 Controller (model already bound via route model binding — `update`, `show`, `destroy`):
 
 ```php
+use Illuminate\Support\Facades\Gate;
+
 public function show(Post $post): JsonResponse
 {
-    $this->authorize('view', $post);
+    Gate::authorize('view', $post);
 
     return response()->json($post);
 }
 
 public function update(UpdatePostRequest $request, Post $post): JsonResponse
 {
-    $this->authorize('update', $post);
+    Gate::authorize('update', $post);
 
     $post->update($request->validated());
 
@@ -139,7 +143,7 @@ public function update(UpdatePostRequest $request, Post $post): JsonResponse
 
 public function destroy(Post $post): JsonResponse
 {
-    $this->authorize('delete', $post);
+    Gate::authorize('delete', $post);
 
     $post->delete();
 
@@ -188,9 +192,11 @@ if (Gate::allows('export-reports')) {
 
 ## Route-Level Authorization
 
-Apply `->middleware('can:update,post')` only for simple single-policy checks directly on a route. For any logic more complex than a single policy method call, use `$this->authorize()` inside the controller:
+Apply `->middleware('can:update,post')` only for simple single-policy checks directly on a route. For any logic more complex than a single policy method call, use `Gate::authorize()` inside the controller:
 
 ```php
+use Illuminate\Support\Facades\Gate;
+
 // simple — acceptable at route level
 Route::put('/posts/{post}', [PostController::class, 'update'])
     ->middleware('can:update,post');
@@ -198,7 +204,7 @@ Route::put('/posts/{post}', [PostController::class, 'update'])
 // complex — always move to controller
 public function update(UpdatePostRequest $request, Post $post): JsonResponse
 {
-    $this->authorize('update', $post);
+    Gate::authorize('update', $post);
     // ...
 }
 ```

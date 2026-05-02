@@ -313,15 +313,12 @@ public function messages(): array
 }
 ```
 
-## stopOnFirstFailure()
+## stopOnFirstFailure
 
-Override `stopOnFirstFailure()` when failing one rule should stop the entire validation cycle — useful when subsequent rules depend on a preceding rule passing:
+Set the `$stopOnFirstFailure` property when failing one rule should stop the entire validation cycle — useful when subsequent rules depend on a preceding rule passing. `FormRequest` reads this as a property; defining it as a method does nothing.
 
 ```php
-public function stopOnFirstFailure(): bool
-{
-    return true;
-}
+protected $stopOnFirstFailure = true;
 ```
 
 Use sparingly. In most cases, returning all errors at once provides a better API consumer experience.

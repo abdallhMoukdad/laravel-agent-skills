@@ -251,22 +251,23 @@ The same rule applies to helpers, traits, and form requests — log in the servi
 
 ## Testing Logs
 
-Laravel 12 core does **not** provide `Log::fake()`, `Log::assertLogged()`, or any built-in log assertion API. Use one of the two approaches below.
+Laravel 12 core does **not** provide a `Log` test fake or any built-in log assertion API. Use one of the two approaches below.
 
-### Option A — `spatie/laravel-log-fake` (recommended)
+### Option A — `timacdonald/log-fake` (recommended)
 
 Provides a clean assertion API. Install as a dev dependency:
 
 ```bash
-composer require spatie/laravel-log-fake --dev
+composer require timacdonald/log-fake --dev
 ```
 
 ```php
 use Illuminate\Support\Facades\Log;
-use Spatie\LaravelLogFake\FakeLogger;
+use TiMacDonald\Log\LogFake;
+use TiMacDonald\Log\LogEntry;
 
 beforeEach(function (): void {
-    Log::swap(new FakeLogger());
+    LogFake::bind();
 });
 
 it('logs order.placed at info level', function (): void {
@@ -274,38 +275,38 @@ it('logs order.placed at info level', function (): void {
 
     placeOrder($order);
 
-    // Assert a specific message was logged at a level
-    Log::assertLoggedMessage('info', 'order.placed');
-
-    // Assert with context inspection
-    Log::assertLogged('info', fn (string $message, array $context): bool
-        => $message === 'order.placed' && $context['order_id'] === $order->id
+    // Assertions take a closure receiving a LogEntry
+    Log::assertLogged(fn (LogEntry $log) =>
+        $log->level === 'info'
+        && $log->message === 'order.placed'
+        && $log->context['order_id'] === $order->id
     );
 });
 
 it('does not log sensitive data', function (): void {
     registerUser(['email' => 'user@example.com', 'password' => 'secret']);
 
-    Log::assertNotLogged('info', fn (string $message, array $context): bool
-        => isset($context['password'])
+    Log::assertNotLogged(fn (LogEntry $log) =>
+        isset($log->context['password'])
     );
 });
 
 it('logs to the audit channel on login', function (): void {
     login(User::factory()->create());
 
-    Log::channel('audit')->assertLogged('info', fn (string $message, array $context): bool
-        => $message === 'auth.login'
+    Log::channel('audit')->assertLogged(fn (LogEntry $log) =>
+        $log->level === 'info' && $log->message === 'auth.login'
     );
 });
 ```
 
-Available assertions (from `spatie/laravel-log-fake`):
-- `Log::assertLogged($level, $callback)` — at least one entry matches
-- `Log::assertLoggedMessage($level, $message)` — at least one entry with that exact message
-- `Log::assertLoggedTimes($level, $times, $callback)` — exact count
-- `Log::assertNotLogged($level, $callback)` — no matching entry
+Available assertions (from `timacdonald/log-fake`):
+- `Log::assertLogged(callable)` — at least one entry matches
+- `Log::assertLoggedTimes(callable, int $count)` — exact count (no level argument)
+- `Log::assertNotLogged(callable)` — no matching entry
 - `Log::assertNothingLogged()` — no log calls at all
+
+Note: `Log::assertLoggedMessage()` does not exist in this package. Use the closure form of `assertLogged()` and inspect `$log->message` instead.
 
 ### Option B — Laravel built-in, no package (using `Event::fake` on `MessageLogged`)
 
@@ -332,4 +333,4 @@ it('logs order.placed at info level', function (): void {
 
 - `references/channels.md` — Complete `config/logging.php` reference covering all channel drivers, the `tap` key, log stacks, environment-specific switching, and the `LOG_CHANNEL` variable.
 - `references/structured-logging.md` — Deep dive on structured logging: `withContext()` middleware pattern, request ID propagation, context in queued jobs, `shareContext()` vs `withContext()`, Monolog processors, and formatting for external log aggregators.
-- `references/log-hygiene.md` — What never to log, masking/redacting helpers, correct PSR-3 level selection for real scenarios, performance considerations, log volume sampling, and log assertion approaches (both `spatie/laravel-log-fake` and `Event::fake` options) with examples.
+- `references/log-hygiene.md` — What never to log, masking/redacting helpers, correct PSR-3 level selection for real scenarios, performance considerations, log volume sampling, and log assertion approaches (both `timacdonald/log-fake` and `Event::fake` options) with examples.

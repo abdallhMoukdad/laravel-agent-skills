@@ -193,10 +193,13 @@ ChargeSubscription::dispatch($subscription)->delay(now()->addMinutes(5));
 // Async on specific queue
 ChargeSubscription::dispatch($subscription)->onQueue('critical');
 
-// Batch (Laravel Bus batch)
+// Batch (Laravel Bus batch) — use makeJob() so the lorisleiva/laravel-actions
+// JobDecorator wraps the call with the runtime parameters. Constructing
+// ChargeSubscription directly would require its actual constructor args
+// (PaymentGateway), not the handle() arguments.
 Bus::batch([
-    new ChargeSubscription($subscription1),
-    new ChargeSubscription($subscription2),
+    ChargeSubscription::makeJob($subscription1),
+    ChargeSubscription::makeJob($subscription2),
 ])->dispatch();
 
 // Resolve from container without executing — useful for batching, testing, or deferred execution

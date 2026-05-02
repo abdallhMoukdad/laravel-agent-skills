@@ -225,6 +225,13 @@ $facadeMagicMethods = [
         'namespace', 'prefix', 'scopeBindings', 'where',
         'withoutMiddleware',
     ],
+    // timacdonald/log-fake's LogFake binds via Log::swap() and exposes these
+    // assertion methods. The package is third-party (declared above), so
+    // they're not visible to Reflection in this verifier's environment.
+    'Log' => [
+        'fake', 'assertLogged', 'assertLoggedTimes', 'assertNotLogged',
+        'assertNothingLogged', 'assertLoggedMessage',
+    ],
 ];
 
 foreach ($files as $file) {

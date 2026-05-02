@@ -175,7 +175,12 @@ public function getRouteKeyName(): string
 }
 ```
 
-For nested resources, Laravel automatically scopes the child binding to the parent. Declare the child in the route signature: `Route::apiResource('users.posts', UserPostController::class)`.
+For nested resources, default route bindings are NOT scoped to the parent — child IDs are looked up globally. Call `->scoped()` (or `->scopeBindings()` on individual routes) to enforce that the child belongs to the parent:
+
+```php
+Route::apiResource('users.posts', UserPostController::class)
+    ->scoped(['post' => 'slug']); // or just ->scoped()
+```
 
 ## Response Conventions
 

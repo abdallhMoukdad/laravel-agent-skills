@@ -255,7 +255,9 @@ Gate::policy(Post::class, PostPolicy::class);
 
 ## Authorizing in Controllers
 
-Use `$this->authorize()` when the model is already resolved by route model binding (`show`, `update`, `destroy`):
+Use `Gate::authorize()` when the model is already resolved by route model binding (`show`, `update`, `destroy`).
+
+> Laravel 11+ removed `AuthorizesRequests` from the default `App\Http\Controllers\Controller`, so `$this->authorize(...)` no longer works out of the box. Use `Gate::authorize(...)` instead, or add `use AuthorizesRequests;` to your base controller if you prefer the trait form.
 
 ```php
 <?php
@@ -268,19 +270,20 @@ use App\Http\Requests\StorePostRequest;
 use App\Http\Requests\UpdatePostRequest;
 use App\Models\Post;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Gate;
 
 final class PostController extends Controller
 {
     public function show(Post $post): JsonResponse
     {
-        $this->authorize('view', $post);
+        Gate::authorize('view', $post);
 
         return response()->json($post);
     }
 
     public function update(UpdatePostRequest $request, Post $post): JsonResponse
     {
-        $this->authorize('update', $post);
+        Gate::authorize('update', $post);
 
         $post->update($request->validated());
 
@@ -289,7 +292,7 @@ final class PostController extends Controller
 
     public function destroy(Post $post): JsonResponse
     {
-        $this->authorize('delete', $post);
+        Gate::authorize('delete', $post);
 
         $post->delete();
 
@@ -298,7 +301,7 @@ final class PostController extends Controller
 }
 ```
 
-`$this->authorize()` throws `Illuminate\Auth\Access\AuthorizationException`, which Laravel converts to a 403 JSON response automatically.
+`Gate::authorize()` throws `Illuminate\Auth\Access\AuthorizationException`, which Laravel converts to a 403 JSON response automatically.
 
 ---
 
@@ -333,7 +336,7 @@ final class StorePostRequest extends FormRequest
 }
 ```
 
-For `update`, the model is already resolved by route model binding — authorize in the controller with `$this->authorize('update', $post)` instead.
+For `update`, the model is already resolved by route model binding — authorize in the controller with `Gate::authorize('update', $post)` instead.
 
 ---
 

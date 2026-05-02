@@ -157,9 +157,7 @@ final class SyncOrderToWarehouse implements ShouldQueue, ShouldHandleEventsAfter
 
 ## Auto-Discovery (Laravel 11+)
 
-Events and listeners are auto-discovered by type-hint in `handle()`. No `$listen` array in `EventServiceProvider` is required.
-
-Use the `#[AsListener]` attribute as an explicit alternative, particularly useful when auto-discovery is disabled or when listening to events from vendor packages:
+Listeners are auto-discovered when they typehint the event in `handle()` or `__invoke()`. Place the listener in `app/Listeners/` and Laravel finds it automatically — no `$listen` array, no registration call needed.
 
 ```php
 <?php
@@ -169,9 +167,7 @@ declare(strict_types=1);
 namespace App\Listeners;
 
 use App\Events\OrderPlaced;
-use Illuminate\Events\Attributes\AsListener;
 
-#[AsListener(OrderPlaced::class)]
 final class NotifyWarehouse
 {
     public function handle(OrderPlaced $event): void
@@ -181,17 +177,39 @@ final class NotifyWarehouse
 }
 ```
 
-### Stopping Propagation
+### Manual Registration
 
-Return `false` from a listener's `handle()` method to prevent subsequent listeners from receiving the event:
+When auto-discovery is disabled or you need to listen to a vendor event, register manually in `app/Providers/AppServiceProvider::boot()`:
 
 ```php
-public function handle(OrderPlaced $event): void
+use Illuminate\Support\Facades\Event;
+use App\Events\OrderPlaced;
+use App\Listeners\NotifyWarehouse;
+
+public function boot(): void
+{
+    Event::listen(OrderPlaced::class, NotifyWarehouse::class);
+
+    // Or with a closure
+    Event::listen(OrderPlaced::class, function (OrderPlaced $event) {
+        // ...
+    });
+}
+```
+
+### Stopping Propagation
+
+Return `false` from a listener's `handle()` method to prevent subsequent listeners from receiving the event. Note the return type must allow a non-`void` return:
+
+```php
+public function handle(OrderPlaced $event): bool|null
 {
     if ($event->order->isFraudulent()) {
         $event->order->flag();
-        return false; // returning false stops propagation — no further listeners run
+        return false; // halts the chain — no further listeners run
     }
+
+    return null;
 }
 ```
 

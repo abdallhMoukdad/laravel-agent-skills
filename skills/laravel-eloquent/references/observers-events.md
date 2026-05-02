@@ -78,13 +78,21 @@ final class UserObserver
         Log::info('User updated', ['id' => $user->id, 'changes' => $user->getChanges()]);
     }
 
-    // NOTE: Observer methods cannot cancel events by returning false — the
-    // return value is silently ignored by Laravel. Use exceptions to abort.
-    public function saving(User $user): void
+    // Observer "ing" methods (creating, updating, saving, deleting, restoring,
+    // replicating) CAN cancel the operation by returning false. Laravel's
+    // Model::fireModelEvent() uses $halt = true for these events.
+    //
+    // After-events (created, updated, deleted, etc.) ignore the return value.
+    //
+    // Use `return false;` to cancel idiomatically. Throw exceptions only when
+    // you need an actual error (which should rollback transactions, etc.).
+    public function saving(User $user): bool|null
     {
         if ($user->name === 'BANNED') {
-            throw new \RuntimeException('Banned users cannot be saved.');
+            return false; // cleanly cancels the save
         }
+
+        return null;
     }
 
     public function saved(User $user): void
@@ -203,7 +211,13 @@ Model::withoutEvents(function (): void {
 });
 ```
 
-In tests, use `$this->withoutModelEvents()` (available in `RefreshDatabase` tests) or wrap with `Model::withoutEvents()`.
+In tests, suppress observer events for a single block with `Model::withoutEvents()`:
+
+```php
+Model::withoutEvents(function () {
+    User::factory()->count(100)->create();
+});
+```
 
 ## `dispatchesEvents` — Mapping Model Events to Custom Event Classes
 
@@ -236,7 +250,7 @@ final class UserCreatedEvent
 }
 ```
 
-Register listeners in `EventServiceProvider` or via `#[AsListener]` on the listener class.
+Register listeners by placing them in `app/Listeners/` (auto-discovered when they typehint the event in `handle()`), or manually via `Event::listen(UserCreatedEvent::class, SendWelcomeEmail::class)` in `AppServiceProvider::boot()`.
 
 ## Critical Pitfall: `query()->update()` Does NOT Fire Observers
 

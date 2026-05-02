@@ -61,6 +61,19 @@ Use `$afterCommit = true` on the job class (or chain `->afterCommit()` on the di
 public bool $afterCommit = true;
 ```
 
+#### ShouldQueueAfterCommit Interface
+
+Laravel 12 ships `Illuminate\Contracts\Queue\ShouldQueueAfterCommit` as the cleaner declarative alternative. It extends `ShouldQueue` so a separate `ShouldQueue` is unnecessary.
+
+```php
+use Illuminate\Contracts\Queue\ShouldQueueAfterCommit;
+
+final class ProcessInvoice implements ShouldQueueAfterCommit
+{
+    // No need to set $afterCommit = true — the interface declares intent.
+}
+```
+
 ### Unique Jobs
 
 Use `ShouldBeUnique` on jobs that must not run concurrently for the same resource. Implement `uniqueId()` to scope the lock to the specific record.
@@ -87,7 +100,19 @@ Use `ShouldHandleEventsAfterCommit` on a queued listener to guarantee its job is
 
 ### Auto-Discovery (Laravel 11+)
 
-Events and listeners are auto-discovered by type-hint — no `$listen` array in `EventServiceProvider` is required. Use the `#[AsListener]` attribute on the listener class as an explicit alternative when auto-discovery is disabled or when the listener handles an event from a vendor package.
+Listeners are auto-discovered when they typehint the event in `handle()` or `__invoke()`. Place the listener in `app/Listeners/` and Laravel finds it automatically — no registration call needed.
+
+When auto-discovery is disabled or for vendor events, register manually in `app/Providers/AppServiceProvider::boot()`:
+
+```php
+use Illuminate\Support\Facades\Event;
+
+Event::listen(OrderPlaced::class, NotifyWarehouse::class);
+// Or with a closure
+Event::listen(OrderPlaced::class, function (OrderPlaced $event) {
+    // ...
+});
+```
 
 ---
 
@@ -149,4 +174,4 @@ php artisan queue:flush
 ## Additional Resources
 
 - `references/jobs.md` — Complete job class anatomy, retry configuration, uniqueness strategies, failure handling, all dispatch patterns, chain and batch usage, and testing with `Queue::fake()`.
-- `references/events-listeners.md` — Event and listener class anatomy, broadcasting, async listeners, auto-discovery and `#[AsListener]`, event subscribers, when to use events vs direct calls, and testing with `Event::fake()`.
+- `references/events-listeners.md` — Event and listener class anatomy, broadcasting, async listeners, auto-discovery, manual registration, event subscribers, when to use events vs direct calls, and testing with `Event::fake()`.

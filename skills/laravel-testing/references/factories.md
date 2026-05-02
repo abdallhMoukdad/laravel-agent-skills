@@ -108,18 +108,20 @@ $posts = Post::factory()->count(3)->make();   // no DB hit
 
 ---
 
-## `make()` vs `create()` vs `makeMany()` vs `createMany()`
+## `make()` vs `create()` vs `createMany()`
 
-| Method        | Persisted | Returns              | Use when                                      |
-|---------------|-----------|----------------------|-----------------------------------------------|
-| `make()`      | No        | Model instance       | Unit tests, no DB needed                      |
-| `create()`    | Yes       | Model instance       | Feature tests that query the DB               |
-| `makeMany()`  | No        | Collection           | Multiple in-memory models                     |
-| `createMany()`| Yes       | Collection           | Seeding or tests needing multiple DB records  |
+| Method                | Persisted | Returns              | Use when                                      |
+|-----------------------|-----------|----------------------|-----------------------------------------------|
+| `make()`              | No        | Model instance       | Unit tests, no DB needed                      |
+| `create()`            | Yes       | Model instance       | Feature tests that query the DB               |
+| `createMany()`        | Yes       | Collection           | Seeding or tests needing multiple DB records  |
+| `createManyQuietly()` | Yes       | Collection           | Same as `createMany`, but suppresses events   |
+
+There is no `makeMany()` method on Eloquent factories. To build several un-persisted instances, chain `count()` with `make()`:
 
 ```php
 $user  = User::factory()->make();
-$users = User::factory()->makeMany(5);      // Collection of 5, not persisted
+$users = User::factory()->count(5)->make(); // Collection of 5, not persisted
 $users = User::factory()->createMany([      // Array of attribute overrides
     ['name' => 'Ada'],
     ['name' => 'Grace'],
