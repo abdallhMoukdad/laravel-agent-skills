@@ -132,6 +132,7 @@ use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Foundation\Bus\Dispatchable;
 use Illuminate\Queue\InteractsWithQueue;
 use Illuminate\Queue\SerializesModels;
+use Illuminate\Support\Facades\Context;
 use Illuminate\Support\Facades\Log;
 
 final class ProcessOrder implements ShouldQueue
@@ -146,7 +147,7 @@ final class ProcessOrder implements ShouldQueue
     public function handle(): void
     {
         // Re-establish request-scoped context inside the worker process
-        Log::withContext([
+        Context::add([
             'request_id' => $this->requestId,
             'order_id'   => $this->orderId,
             'job'        => static::class,
@@ -277,7 +278,7 @@ Datadog's log pipeline expects JSON with `message`, `level`, `datetime`, and `co
 ],
 ```
 
-Map Datadog reserved attributes in `datadog.yaml` or via the log pipeline: `datetime` → `@timestamp`, `level_name` → `status`.
+Datadog accepts ISO-8601 timestamps natively, so `datetime` from Monolog 3 `JsonFormatter` works as-is. For custom remapping, see Datadog's log-pipeline docs.
 
 ### Papertrail
 
@@ -330,7 +331,7 @@ final class SendInvoiceEmail implements ShouldQueue
 
     public function handle(): void
     {
-        Log::withContext([
+        Context::add([
             'request_id' => $this->requestId,
             'invoice_id' => $this->invoiceId,
             'job'        => static::class,
@@ -348,7 +349,7 @@ final class SendInvoiceEmail implements ShouldQueue
 
     public function failed(\Throwable $e): void
     {
-        Log::withContext(['invoice_id' => $this->invoiceId]);
+        Context::add('invoice_id', $this->invoiceId);
         Log::error('invoice.email.failed', [
             'error'   => $e->getMessage(),
             'attempt' => $this->attempts(),

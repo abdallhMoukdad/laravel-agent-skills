@@ -162,6 +162,10 @@ When a route is throttled, Laravel automatically returns a `429 Too Many Request
 To customize the 429 response globally, override `throttleWithRedirectTo` or register a custom response in the exception handler:
 
 ```php
+use Illuminate\Foundation\Configuration\Exceptions;
+use Illuminate\Http\Exceptions\ThrottleRequestsException;
+use Illuminate\Http\Request;
+
 // bootstrap/app.php (Laravel 11+)
 ->withExceptions(function (Exceptions $exceptions) {
     $exceptions->render(function (ThrottleRequestsException $e, Request $request) {

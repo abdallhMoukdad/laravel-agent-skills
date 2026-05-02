@@ -65,6 +65,8 @@ Perform across exactly two deploys:
 1. **Deploy 1:** Add the column as `->nullable()` with no default. The migration runs without touching existing rows.
 2. **Deploy 2:** In a single migration, backfill existing rows (via `DB::table()->whereNull('column')->update(...)`) and then call `->nullable(false)->change()` to enforce the NOT NULL constraint.
 
+> For tables with more than ~100k rows, move the backfill out of the migration into a queued job before running the `nullable(false)` migration — otherwise the deploy blocks until backfill completes.
+
 ### Renaming a Column
 
 Perform across three deploys:

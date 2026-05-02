@@ -22,6 +22,7 @@ saved     → (fires after both created and updated)
 ```
 deleting  → (before DELETE or soft delete)
 deleted   → (after DELETE or soft delete)
+trashed   → (after a soft delete; distinct from `deleted`, registered via `softDeleted()`)
 ```
 
 **Soft Delete Restore:**
@@ -34,7 +35,7 @@ restored  → (after restoring)
 **Replication (`$model->replicate()`):**
 
 ```
-replicating → (before the new instance is created)
+replicating → fires on the newly-replicated (unsaved) instance after attributes are copied (not before)
 ```
 
 Note: `saving` fires before `creating` and before `updating`. `saved` fires after `created` and after `updated`.

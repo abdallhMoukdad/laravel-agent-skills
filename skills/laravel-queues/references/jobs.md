@@ -110,9 +110,9 @@ public int $timeout = 60;
 Use `retryUntil()` when the job should keep retrying for a fixed window regardless of attempt count:
 
 ```php
-use DateTime;
+use DateTimeInterface;
 
-public function retryUntil(): DateTime
+public function retryUntil(): DateTimeInterface
 {
     // Keep retrying for 10 minutes from the time the job was originally dispatched
     return now()->addMinutes(10);

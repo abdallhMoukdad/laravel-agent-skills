@@ -58,7 +58,7 @@ User::where('is_active', true)->lazy(500)->each(function (User $user): void {
 });
 ```
 
-`lazy()` is safer than `cursor()` for queries with `ORDER BY` or when pagination logic matters — it re-queries using offset/limit rather than a server cursor.
+`lazy()` returns a `LazyCollection` and uses offset-based chunking via `forPage()`. Like `chunk()`, it has a shift-on-mutation issue: deleting or updating rows during iteration can skip records. For mutation during iteration, use `lazyById()` (analogous to `chunkById()`).
 
 ## `toBase()` — Skip Model Hydration
 

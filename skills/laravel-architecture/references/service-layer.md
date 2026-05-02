@@ -2,7 +2,7 @@
 
 ### Full Service Class Structure
 
-Use PHP 8.2+ `readonly` constructor promotion. Define one public method per use case. Keep private helpers small and focused.
+Use PHP 8.1+ `readonly` constructor promotion. Define one public method per use case. Keep private helpers small and focused.
 
 ```php
 <?php

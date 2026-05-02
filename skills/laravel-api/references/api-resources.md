@@ -80,7 +80,7 @@ return [
 
 ## $this->whenLoaded() — Safe Relationship Access
 
-Never access a relationship directly inside `toArray()`. Use `whenLoaded()` to avoid N+1 queries and prevent `Illuminate\Database\LazyLoadingViolationException`.
+Never access a relationship directly inside `toArray()`. Use `whenLoaded()` so a relationship is only serialized when the controller has eager-loaded it. This prevents accidental lazy loads (and with `Model::preventLazyLoading()` enabled, prevents `LazyLoadingViolationException`). Avoiding N+1 queries themselves is the controller's job — call `with(...)` there.
 
 ```php
 public function toArray(Request $request): array

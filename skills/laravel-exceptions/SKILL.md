@@ -30,8 +30,6 @@ $exceptions->shouldRenderJsonWhen(
 );
 ```
 
-Place this call at the top of the `withExceptions` block so it applies before any other renderer.
-
 ---
 
 ## Standard API Error Response Shape
@@ -99,7 +97,22 @@ $exceptions->dontReport([
 ]);
 ```
 
+These four are already in Laravel's internal `$internalDontReport` list (along with `HttpException`, `HttpResponseException`, `TokenMismatchException`). The explicit registration is for documentation/intent only. The genuine value of `dontReport()` is for *application* exception types. Use `stopIgnoring([...])` if you DO want one of the internal-defaults reported.
+
 These represent user errors — a missing record, invalid input, an unauthorized action. They are not application bugs. Reserve log/tracker noise for real failures.
+
+### Other useful `Exceptions` configuration methods
+
+| Method | Purpose |
+|---|---|
+| `level(MyException::class, LogLevel::Warning)` | Override the log level for a specific exception type. |
+| `dontReportDuplicates()` | Suppress duplicate reports of the same exception within a single request. |
+| `dontReportWhen(fn(Throwable $e) => ...)` | Suppress reports based on a runtime predicate. |
+| `stopIgnoring([HttpException::class])` | Re-enable reporting of an exception type that is in the internal `$internalDontReport` list. |
+| `truncateRequestExceptionsAt(120)` | Truncate `RequestException` messages to N characters in reports. |
+| `map(OldException::class, NewException::class)` | Rewrite one exception type to another before reporting/rendering. |
+| `respond(fn(Response $response, Throwable $e, Request $request) => ...)` | Modify the outgoing exception response globally. |
+| `context(fn(Throwable $e) => [...])` | Attach extra context to every reported exception. |
 
 ---
 

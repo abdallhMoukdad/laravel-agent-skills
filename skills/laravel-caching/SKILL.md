@@ -63,6 +63,8 @@ Cache::flush();
 Cache::rememberForever('key', fn () => expensiveComputation());
 
 // Check existence
+// Note: has() returns false for keys whose stored value is literally null
+// (it's implemented as `! is_null($this->get($key))`).
 if (Cache::has('key')) { ... }
 
 // Retrieve and delete atomically
@@ -130,7 +132,7 @@ final class CacheKeys
 
 ## Cache Tags
 
-Cache tags group related entries so they can be invalidated together with a single call. Tags are only available with the `redis` and `memcached` drivers. Never use tags with the `file` or `database` driver — it throws a `BadMethodCallException`.
+Cache tags group related entries so they can be invalidated together with a single call. Tags require a tag-aware store (`redis`, `memcached`, `array`, `apc`). The `file` and `database` drivers throw `BadMethodCallException`.
 
 ```php
 // Store with tags
@@ -198,7 +200,13 @@ if ($lock->get()) {
 
 ## Stale-While-Revalidate
 
-Use `Cache::flexible()` when serving slightly stale data is acceptable. It returns the cached value immediately (no lock wait) and regenerates in the background once the item enters its stale window:
+Use `Cache::flexible()` when serving slightly stale data is acceptable. It returns the cached value immediately (no lock wait) and regenerates in the background once the item enters its stale window. Full signature:
+
+```php
+Cache::flexible(string $key, array $ttl, callable $callback, array|null $lock = null, bool $alwaysDefer = false): mixed
+```
+
+`$lock = ['seconds' => N, 'owner' => '...']` controls the background-refresh lock used to prevent duplicate computations.
 
 ```php
 $result = Cache::flexible("invoices:{$id}", [

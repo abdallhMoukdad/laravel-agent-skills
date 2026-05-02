@@ -367,7 +367,7 @@ final class PostResource extends JsonResource
             'links' => [
                 'delete' => $this->when(
                     $request->user()?->can('delete', $this->resource),
-                    fn() => route('posts.destroy', $this->id)
+                    fn() => route('posts.destroy', $this->resource)
                 ),
             ],
         ];

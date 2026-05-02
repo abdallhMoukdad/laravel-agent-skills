@@ -219,7 +219,7 @@ return response()->json(['message' => 'Created'], 201);
 return response($post->body);
 ```
 
-Add a `X-Content-Type-Options: nosniff` header globally via middleware or the `TrustProxies` / `SecureHeaders` layer to instruct browsers never to sniff the content type.
+Add a `X-Content-Type-Options: nosniff` header globally via a small response middleware (or a third-party package such as `bepsvpt/secure-headers`).
 
 ```php
 // In a middleware or global response macro

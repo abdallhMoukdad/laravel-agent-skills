@@ -99,6 +99,22 @@ User::active()->ofType('admin')->get();
 
 Use local scopes for reusable, named query fragments that appear in more than one place. Dynamic scopes accept parameters — declare types explicitly.
 
+### `#[Scope]` Attribute (Laravel 11+)
+
+Laravel 11+ also accepts the `#[\Illuminate\Database\Eloquent\Attributes\Scope]` attribute as an alternative to the `scope` prefix:
+
+```php
+use Illuminate\Database\Eloquent\Attributes\Scope;
+
+#[Scope]
+public function active(Builder $query): Builder
+{
+    return $query->where('is_active', true);
+}
+```
+
+Both styles work — the prefix form remains canonical.
+
 ## Accessors and Mutators
 
 Use the `Attribute` return type (available since Laravel 9) for all accessors and mutators.
@@ -135,9 +151,9 @@ final class MoneyCast implements CastsAttributes
         return new Money((int) $value, $attributes['currency']);
     }
 
-    public function set(Model $model, string $key, mixed $value, array $attributes): int
+    public function set(Model $model, string $key, mixed $value, array $attributes): ?int
     {
-        return $value->getAmount();
+        return $value?->getAmount();
     }
 }
 ```
@@ -213,6 +229,7 @@ class Post extends Model
 {
     use SoftDeletes;
 
+    // SoftDeletes registers this cast automatically — manual entry shown only for clarity
     protected $casts = [
         'deleted_at' => 'datetime',
     ];

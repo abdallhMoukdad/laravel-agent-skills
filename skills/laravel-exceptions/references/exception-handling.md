@@ -32,7 +32,12 @@ return Application::configure(basePath: dirname(__DIR__))
             fn(Request $request, Throwable $e): bool => $request->is('api/*')
         );
 
-        // 2. Suppress expected, user-caused exceptions from the log
+        // 2. Suppress expected, user-caused exceptions from the log.
+        // These four are already in Laravel's internal $internalDontReport list
+        // (along with HttpException, HttpResponseException, TokenMismatchException).
+        // The explicit registration is for documentation/intent only. The genuine
+        // value of dontReport() is for *application* exception types. Use
+        // stopIgnoring([...]) if you DO want one of the internal-defaults reported.
         $exceptions->dontReport([
             ModelNotFoundException::class,
             ValidationException::class,
@@ -43,6 +48,9 @@ return Application::configure(basePath: dirname(__DIR__))
         // 3. Custom reporter per exception type
         // Note: dontReport is checked first — if PaymentGatewayException is also in dontReport,
         // this callback will never execute. Remove it from dontReport to enable custom reporting.
+        // If the exception class defines its own report() method that does not return false,
+        // the global $exceptions->report() callback for that type is bypassed. Pick one
+        // location for custom reporting per exception type.
         $exceptions->report(function (PaymentGatewayException $e): void {
             \Log::channel('payments')->error($e->getMessage(), [
                 'code'  => $e->getCode(),

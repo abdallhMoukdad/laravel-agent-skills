@@ -49,7 +49,7 @@ Access `->plainTextToken` once, return it to the client, and never store it agai
 
 ### SPA Cookie Auth (First-Party SPAs)
 
-For same-domain SPAs, add `EnsureFrontendRequestsAreStateful` to the API middleware group in `bootstrap/app.php`:
+For same-domain SPAs, prepend `EnsureFrontendRequestsAreStateful` to the API middleware group used by routes loaded via `withRouting(api: ...)` in `bootstrap/app.php`:
 
 ```php
 ->withMiddleware(function (Middleware $middleware) {
@@ -79,7 +79,7 @@ Route::middleware('auth:sanctum')->group(function () {
 
 ## Policies for Model-Based Authorization
 
-Create one policy per model. Name policies `{Model}Policy` and place them in `app/Policies/`. Laravel 11+ auto-discovers them — no manual registration required.
+Create one policy per model. Name policies `{Model}Policy` and place them in `app/Policies/`. Laravel 11+ auto-discovers them — no manual registration required. For non-standard locations, register manually with `Gate::policy(Post::class, PostPolicy::class)` in `AppServiceProvider::boot()` (Laravel 11+ no longer scaffolds `AuthServiceProvider` by default).
 
 ```bash
 php artisan make:policy PostPolicy --model=Post
@@ -280,7 +280,7 @@ $this->getJson('/api/posts')->assertOk();
 
 // Test ability-scoped token
 Sanctum::actingAs($user, ['update-post']);
-$this->putJson('/api/posts/1', [...])->assertOk();
+$this->putJson('/api/posts/1', ['title' => 'Updated'])->assertOk();
 ```
 
 ---

@@ -2,6 +2,8 @@
 
 Laravel wraps Monolog. Each entry in `config/logging.php` under `channels` is a named channel with a `driver` key.
 
+> **Note:** All channels accept an optional `'replace_placeholders' => true` to enable PSR-3 `{key}` placeholder substitution from the context array. It defaults to `false` and is omitted from the examples below.
+
 ### `single`
 
 Writes all log entries to a single file. Never use in production — the file grows without bound.
@@ -11,7 +13,6 @@ Writes all log entries to a single file. Never use in production — the file gr
     'driver' => 'single',
     'path'   => storage_path('logs/laravel.log'),
     'level'  => env('LOG_LEVEL', 'debug'),
-    'replace_placeholders' => true,
 ],
 ```
 
@@ -25,7 +26,6 @@ Writes to a new file each day, named `laravel-YYYY-MM-DD.log`. Retains `days` mo
     'path'   => storage_path('logs/laravel.log'),
     'level'  => env('LOG_LEVEL', 'debug'),
     'days'   => 14,
-    'replace_placeholders' => true,
 ],
 ```
 

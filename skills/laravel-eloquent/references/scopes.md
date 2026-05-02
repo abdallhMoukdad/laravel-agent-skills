@@ -122,6 +122,22 @@ User::active()
     ->get();
 ```
 
+### `#[Scope]` Attribute (Laravel 11+)
+
+Laravel 11+ also accepts the `#[\Illuminate\Database\Eloquent\Attributes\Scope]` attribute as an alternative to the `scope` prefix:
+
+```php
+use Illuminate\Database\Eloquent\Attributes\Scope;
+
+#[Scope]
+public function active(Builder $query): Builder
+{
+    return $query->where('is_active', true);
+}
+```
+
+Both styles work — the prefix form remains canonical.
+
 ## Dynamic Local Scopes
 
 Accept variable arguments using variadic parameters or arrays for flexible filtering.

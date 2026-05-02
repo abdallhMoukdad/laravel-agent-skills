@@ -141,7 +141,7 @@ Schema::rename('user_tokens', 'personal_access_tokens');
 
 On MySQL with InnoDB, the following operations rewrite the entire table and hold a **write lock** for the duration:
 
-- `ADD COLUMN ... DEFAULT non-null-value` (MySQL < 8.0.12 only; on MySQL 8.0.12+ this is instant)
+- `ADD COLUMN ... DEFAULT non-null-value` (MySQL < 8.0.12 always rewrites). INSTANT ADD COLUMN is available from MySQL 8.0.12+ for many cases, but not all (compressed rows, FULLTEXT tables, and row-version limits force a table copy). Verify with explicit `ALGORITHM=INSTANT` in tests. The conservative pattern (nullable first, backfill, set default) remains the safe default.
 - `MODIFY COLUMN` changing the data type
 - `ADD INDEX` on a table not yet indexed (online DDL may help depending on version)
 

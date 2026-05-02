@@ -192,7 +192,7 @@ In `bootstrap/app.php` (Laravel 11+):
 })
 ```
 
-This adds `EnsureFrontendRequestsAreStateful` to the `api` middleware group.
+This prepends `EnsureFrontendRequestsAreStateful` to the API middleware group used by routes loaded via `withRouting(api: ...)` in `bootstrap/app.php`.
 
 ### Configure Trusted Origins
 
@@ -287,6 +287,14 @@ final class PostTest extends TestCase
 
 ### Ability-Scoped Token Test
 
+The route must declare an abilities middleware (or the controller must call `tokenCan()`) for `assertForbidden()` to pass — without it, Sanctum will not auto-403 based on token abilities.
+
+```php
+// In routes/api.php (or a route group):
+Route::post('/posts', [PostController::class, 'store'])
+    ->middleware('abilities:posts:write');
+```
+
 ```php
 public function test_read_only_token_cannot_create_post(): void
 {
@@ -294,6 +302,9 @@ public function test_read_only_token_cannot_create_post(): void
 
     Sanctum::actingAs($user, ['posts:read']); // read-only token
 
+    // Without the `abilities:posts:write` middleware on the route (or an
+    // explicit `abort_unless($request->user()->tokenCan('posts:write'), 403)`
+    // check in the controller), this assertion will fail.
     $this->postJson('/api/posts', ['title' => 'New Post'])
         ->assertForbidden();
 }

@@ -91,7 +91,7 @@ $table->index(['user_id', 'created_at'], 'idx_orders_user_created');
 ## When to Add an Index
 
 **Always index:**
-- Every foreign key column (Laravel does not add these automatically when using `foreignId()` + `constrained()` on some versions — verify with `migrate:status` and `SHOW INDEX`)
+- Always index every foreign key column. MySQL/InnoDB auto-creates an index for FK columns; PostgreSQL does NOT. Verify in MySQL with `SHOW INDEX FROM <table>` and in PostgreSQL with `\d <table>` or by querying `pg_indexes`. Note: `migrate:status` only reports which migrations have run — it cannot show indexes.
 - Columns in frequent `WHERE` clauses on large tables
 - Columns in `ORDER BY` when the result set is not trivially small
 - Columns used in `whereHas()` constraints (they generate sub-queries with `WHERE`)
@@ -206,38 +206,29 @@ Always re-enable constraints after seeding. Leaving them disabled masks data int
 | `fullText()` support | Yes (5.6+ InnoDB) | Yes (GIN index generated) |
 | `->after('col')` column ordering | Supported | Ignored |
 | `ADD COLUMN NULL` speed | Near-instant (metadata) | Near-instant |
-| `ADD COLUMN DEFAULT value` | Full table rewrite (< MySQL 8.0.12), instant for some types in 8.0.12+ | Near-instant (stores default in catalog) |
+| `ADD COLUMN DEFAULT value` | Full table rewrite (< MySQL 8.0.12). INSTANT ADD COLUMN is available from MySQL 8.0.12+ for many cases, but not all (compressed rows, FULLTEXT tables, and row-version limits force a table copy). Verify with explicit `ALGORITHM=INSTANT` in tests. The conservative pattern (nullable first, backfill, set default) remains the safe default. | Near-instant (stores default in catalog) |
 | Index name limit | 64 characters | 63 characters |
 | Partial indexes | Not supported (except via expressions in 8.x) | Supported via `whereRaw()` |
 | Concurrent index build | Not supported (locks table) | `CREATE INDEX CONCURRENTLY` (no lock) |
 
 For PostgreSQL, `ADD COLUMN DEFAULT value` is safe and does not rewrite the table (the default is stored in `pg_attrdef` and applied at read time). The large-table caution about defaults applies specifically to MySQL versions before 8.0.12.
 
-When using PostgreSQL and zero-downtime is required for large-table index additions, use a raw migration to build the index concurrently:
-
-```php
-public function up(): void
-{
-    // Disable wrapping in a transaction — CONCURRENTLY cannot run inside one
-    DB::statement('CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_events_category ON events(category)');
-}
-
-public function down(): void
-{
-    DB::statement('DROP INDEX CONCURRENTLY IF EXISTS idx_events_category');
-}
-```
-
-Disable the migration transaction wrapper by setting `$withinTransaction = false` on the migration class:
+When using PostgreSQL and zero-downtime is required for large-table index additions, use a raw migration to build the index concurrently. Both `up()` and `down()` must run **outside** a transaction — declare `$withinTransaction = false` once on the migration class so a copy-paste user doesn't end up with `down()` failing inside a transaction:
 
 ```php
 return new class extends Migration
 {
+    // CONCURRENTLY cannot run inside a transaction — applies to both up() and down().
     public bool $withinTransaction = false;
 
     public function up(): void
     {
-        DB::statement('CREATE INDEX CONCURRENTLY ...');
+        DB::statement('CREATE INDEX CONCURRENTLY IF NOT EXISTS idx_events_category ON events(category)');
+    }
+
+    public function down(): void
+    {
+        DB::statement('DROP INDEX CONCURRENTLY IF EXISTS idx_events_category');
     }
 };
 ```

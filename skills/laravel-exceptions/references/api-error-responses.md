@@ -117,6 +117,11 @@ use Throwable;
         fn(Request $request, Throwable $e): bool => $request->is('api/*')
     );
 
+    // These four are already in Laravel's internal $internalDontReport list
+    // (along with HttpException, HttpResponseException, TokenMismatchException).
+    // Listing them is for documentation/intent only — the genuine value of
+    // dontReport() is for *application* exception types. Use stopIgnoring([...])
+    // if you DO want one of the internal-defaults reported.
     $exceptions->dontReport([
         ModelNotFoundException::class,
         ValidationException::class,
@@ -145,6 +150,10 @@ use Throwable;
 
     // Catch-all — last renderer; never expose internals
     $exceptions->render(function (Throwable $e, Request $request) {
+        if (config('app.debug')) {
+            return null; // let Laravel render the debug page in local/dev
+        }
+
         return response()->json(['message' => 'An unexpected error occurred.'], 500);
     });
 

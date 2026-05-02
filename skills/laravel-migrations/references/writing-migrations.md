@@ -57,7 +57,7 @@ return new class extends Migration
             $table->text('notes')->nullable();                 // large text, optional
 
             $table->decimal('subtotal', 10, 2);                // money — never float
-            $table->decimal('tax', 10, 2)->default('0.00');
+            $table->decimal('tax', 10, 2)->default(0);
             $table->decimal('total', 10, 2);
 
             $table->string('currency', 3)->default('USD');
@@ -151,7 +151,7 @@ $table->string('currency', 3)->default('USD');
 $table->integer('retry_count')->default(0);
 ```
 
-**Do NOT use `->default()` on large production tables during an `ADD COLUMN` migration.** MySQL (< 8.0.12) will rewrite the entire table to apply the default to existing rows, holding a write lock. On MySQL 8.0.12+, `ADD COLUMN ... DEFAULT value` is instant and does not rewrite the table. Add the column as `->nullable()` first, backfill via a job, then add the default in a follow-up migration.
+**Do NOT use `->default()` on large production tables during an `ADD COLUMN` migration.** MySQL (< 8.0.12) will rewrite the entire table to apply the default to existing rows, holding a write lock. INSTANT ADD COLUMN is available from MySQL 8.0.12+ for many cases, but not all (compressed rows, FULLTEXT tables, and row-version limits force a table copy). Verify with explicit `ALGORITHM=INSTANT` in tests. The conservative pattern (nullable first, backfill, set default) remains the safe default.
 
 ## Computed Columns
 

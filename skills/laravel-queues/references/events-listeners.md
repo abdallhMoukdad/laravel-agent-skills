@@ -120,7 +120,9 @@ final class RecordOrderAnalytics implements ShouldQueue
     public string $connection = 'redis';
     public string $queue      = 'analytics';
 
-    // Delay dispatch by 10 seconds
+    // Delay dispatch by 10 seconds.
+    // `$delay` can also be a DateTimeInterface or DateInterval for absolute times —
+    // use `public int|\DateTimeInterface|\DateInterval $delay = 10;` if needed.
     public int $delay = 10;
 
     public function handle(OrderPlaced $event): void

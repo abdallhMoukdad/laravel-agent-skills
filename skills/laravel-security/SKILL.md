@@ -221,9 +221,12 @@ Always call `authorize()` in the Form Request for unbound resource creation acti
 // Form Request authorize() — for create actions
 public function authorize(): bool
 {
-    return $this->user()->hasVerifiedEmail()
+    return $this->user() !== null
+        && $this->user()->hasVerifiedEmail()
         && $this->user()->can('create', Post::class);
 }
+// Always null-check `user()` in `authorize()` even when the route is behind
+// `auth:sanctum`, so unauthenticated requests get a clean 403 instead of a 500.
 
 // Controller — for model-bound actions
 public function update(UpdatePostRequest $request, Post $post): PostResource

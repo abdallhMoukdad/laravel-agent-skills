@@ -203,6 +203,7 @@ Bus::batch([
 ])->dispatch();
 
 // Resolve from container without executing — useful for batching, testing, or deferred execution
+// UNVERIFIED — refer to lorisleiva/laravel-actions docs for exact API
 $action = CreateUser::make();
 $result = $action->handle($data);
 ```
@@ -214,6 +215,7 @@ No test doubles, no HTTP stack, no artisan — just call `handle()` directly or 
 ```php
 use App\Actions\Users\CreateUser;
 use App\Data\CreateUserData;
+use Illuminate\Support\Facades\Hash;
 
 it('creates a user with a hashed password', function (): void {
     $data = CreateUserData::from([

@@ -71,6 +71,8 @@ Cache::forget("invoices:{$id}:pdf");
 
 Remove all items from the active cache store. In production, this affects every key in the store (including sessions if they share the same Redis database). Use targeted tag invalidation instead.
 
+Note: on the Redis driver, `Cache::flush()` issues `FLUSHDB` and ignores `CACHE_PREFIX` — it wipes the entire Redis database index. Use a dedicated `REDIS_CACHE_DB` to isolate cache from sessions/queues.
+
 ```php
 Cache::flush(): bool
 ```
@@ -191,7 +193,7 @@ Calling `Cache::tags()` with the `file` or `database` driver throws `BadMethodCa
 
 ```php
 // Check driver before using tags
-if (config('cache.default') === 'redis') {
+if (Cache::supportsTags()) {
     Cache::tags(['invoices'])->flush();
 } else {
     Cache::forget("invoices:{$id}:pdf"); // fallback to targeted forget
@@ -287,8 +289,10 @@ it('calls remember once', function () {
 `Cache::flexible()` is a Laravel 11+/12 method that implements stale-while-revalidate: it serves the cached value immediately and regenerates in the background using `defer()` once the item enters its stale window. It eliminates perceived latency without a lock.
 
 ```php
-Cache::flexible(string $key, array $ttl, Closure $callback): mixed
+Cache::flexible(string $key, array $ttl, callable $callback, array|null $lock = null, bool $alwaysDefer = false): mixed
 ```
+
+`$lock = ['seconds' => N, 'owner' => '...']` controls the background-refresh lock used to prevent duplicate computations.
 
 ```php
 $result = Cache::flexible("invoices:{$id}", [

@@ -79,6 +79,8 @@ Controllers must be thin: receive a validated Form Request, delegate to one serv
 
 No database queries in controllers. No business logic. No if-chains that decide outcomes based on model state.
 
+> Laravel 11+ removed the requirement to extend `App\Http\Controllers\Controller`. Controllers can be plain classes; extend the base only if you need its trait imports (e.g., `AuthorizesRequests`).
+
 ```php
 final class PostController
 {
@@ -135,16 +137,18 @@ Route::prefix('v1')
     ->group(base_path('routes/api/v1.php'));
 ```
 
-Always name every route. Never reference routes by URL string in application code.
+Always name every route. Never reference routes by URL string in application code. `apiResource` already generates these defaults — use `->names([...])` only when you need to override them, e.g. inside a `prefix('admin')` group where the default name (`admin.posts.index`) would collide with another resource:
 
 ```php
-Route::apiResource('posts', PostController::class)->names([
-    'index'   => 'posts.index',
-    'store'   => 'posts.store',
-    'show'    => 'posts.show',
-    'update'  => 'posts.update',
-    'destroy' => 'posts.destroy',
-]);
+Route::prefix('admin')->group(function () {
+    Route::apiResource('posts', AdminPostController::class)->names([
+        'index'   => 'admin.posts.index',
+        'store'   => 'admin.posts.store',
+        'show'    => 'admin.posts.show',
+        'update'  => 'admin.posts.update',
+        'destroy' => 'admin.posts.destroy',
+    ]);
+});
 ```
 
 ## Route Model Binding

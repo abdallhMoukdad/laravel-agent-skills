@@ -185,4 +185,4 @@ $user->isGuarded('is_admin');   // true if in $guarded
 | `$guarded = ['col1']` | Blacklist — all except listed | Risky |
 | `$guarded = []` | No protection — everything fillable | Never |
 | `$guarded = ['*']` | Everything blocked | Yes — for audit/log models |
-| Neither defined | Technically `$guarded = ['*']` in Laravel 9+ — but implementation-dependent; always be explicit. | Acceptable but be explicit |
+| Neither defined | Default is `$guarded = ['*']` (set on `Illuminate\Database\Eloquent\Model`) — everything blocked. Always be explicit instead of relying on the default. | Safe by default, but be explicit |
