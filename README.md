@@ -1,12 +1,12 @@
 # laravel-agent-skills
 
-A [Claude Code](https://claude.ai/code) plugin providing six focused, proactive skills for building production-quality Laravel 12 API-only backends. Each skill activates automatically when you work in its domain, guiding you toward best practices without getting in the way.
+A [Claude Code](https://claude.ai/code) plugin providing eight focused, proactive skills for building production-quality Laravel 12 API-only backends. Each skill activates automatically when you work in its domain, guiding you toward best practices without getting in the way.
 
 ---
 
 ## What This Plugin Does
 
-`laravel-agent-skills` ships six skills that cover the full surface area of a modern Laravel 12 REST/JSON API backend:
+`laravel-agent-skills` ships eight skills that cover the full surface area of a modern Laravel 12 REST/JSON API backend:
 
 | Skill | Trigger Conditions | What It Covers |
 |---|---|---|
@@ -16,6 +16,8 @@ A [Claude Code](https://claude.ai/code) plugin providing six focused, proactive 
 | **laravel-auth** | Implementing authentication, authorization, or token management | Sanctum API tokens, Passport, policy classes, gates, role/permission patterns, token rotation, unauthenticated vs. unauthorized responses |
 | **laravel-queues** | Writing jobs, listeners, events, or background processing code | Job chunking, retries & backoff, unique jobs, batching, failed job handling, horizon configuration, queue-worker deployment |
 | **laravel-testing** | Writing or running tests (feature, unit, or integration) | Pest or PHPUnit conventions, `RefreshDatabase`, HTTP test helpers, factories, mock vs. fake, asserting JSON structure, test isolation |
+| **laravel-migrations** | Creating migrations, adding columns, modifying tables, or making any schema changes | Migration naming conventions, `up()`/`down()` symmetry, zero-downtime patterns (expand/contract), index hygiene, foreign key ordering, never modifying deployed migrations |
+| **laravel-exceptions** | Handling exceptions, creating custom exceptions, configuring error handling, or returning consistent API error responses | `bootstrap/app.php` exception config (Laravel 12 style), domain exception hierarchy, consistent JSON error envelope, `renderable()` vs `reportable()`, `dontReport` rules |
 
 ---
 
@@ -32,7 +34,7 @@ A [Claude Code](https://claude.ai/code) plugin providing six focused, proactive 
 1. Clone this repository anywhere on your machine:
 
    ```bash
-   git clone https://github.com/laravel/agent-skills.git ~/plugins/laravel-agent-skills
+   git clone https://github.com/abdallhMoukdad/laravel-agent-skills.git ~/plugins/laravel-agent-skills
    ```
 
 2. Open your Claude Code settings (`~/.claude/settings.json`) and add the plugin directory:
@@ -45,7 +47,7 @@ A [Claude Code](https://claude.ai/code) plugin providing six focused, proactive 
    }
    ```
 
-3. Restart Claude Code. The six skills will now be available automatically.
+3. Restart Claude Code. The eight skills will now be available automatically.
 
 ---
 
