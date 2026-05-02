@@ -1,12 +1,12 @@
 # laravel-agent-skills
 
-A [Claude Code](https://claude.ai/code) plugin providing eight focused, proactive skills for building production-quality Laravel 12 API-only backends. Each skill activates automatically when you work in its domain, guiding you toward best practices without getting in the way.
+A [Claude Code](https://claude.ai/code) plugin providing eleven focused, proactive skills for building production-quality Laravel 12 API-only backends. Each skill activates automatically when you work in its domain, guiding you toward best practices without getting in the way.
 
 ---
 
 ## What This Plugin Does
 
-`laravel-agent-skills` ships eight skills that cover the full surface area of a modern Laravel 12 REST/JSON API backend:
+`laravel-agent-skills` ships eleven skills that cover the full surface area of a modern Laravel 12 REST/JSON API backend:
 
 | Skill | Trigger Conditions | What It Covers |
 |---|---|---|
@@ -18,6 +18,9 @@ A [Claude Code](https://claude.ai/code) plugin providing eight focused, proactiv
 | **laravel-testing** | Writing or running tests (feature, unit, or integration) | Pest or PHPUnit conventions, `RefreshDatabase`, HTTP test helpers, factories, mock vs. fake, asserting JSON structure, test isolation |
 | **laravel-migrations** | Creating migrations, adding columns, modifying tables, or making any schema changes | Migration naming conventions, `up()`/`down()` symmetry, zero-downtime patterns (expand/contract), index hygiene, foreign key ordering, never modifying deployed migrations |
 | **laravel-exceptions** | Handling exceptions, creating custom exceptions, configuring error handling, or returning consistent API error responses | `bootstrap/app.php` exception config (Laravel 12 style), domain exception hierarchy, consistent JSON error envelope, `renderable()` vs `reportable()`, `dontReport` rules |
+| **laravel-caching** | Adding caching, using Redis, caching query results, invalidating cache, preventing cache stampede, or configuring cache drivers | Cache drivers, `Cache::remember()`, TTL discipline, namespaced keys, cache tags (Redis), stampede prevention with `Cache::lock()`, stale-while-revalidate with `Cache::flexible()`, service-layer placement |
+| **laravel-security** | Securing a Laravel app, preventing SQL injection, setting up rate limiting, configuring CORS, protecting against mass assignment, or validating input securely | Mass assignment guards, Form Request validation, SQL injection prevention, named rate limiters, CORS configuration, Sanctum token expiration, `$hidden` fields, policy auto-discovery |
+| **laravel-logging** | Adding logging, setting up log channels, writing structured logs, configuring audit logging, or logging user activity | PSR-3 log levels, structured context with dot-notation events, `Log::shareContext()` middleware, sensitive data masking, channel configuration, dedicated audit channel, `Context` facade (Laravel 11+) |
 
 ---
 
@@ -47,7 +50,7 @@ A [Claude Code](https://claude.ai/code) plugin providing eight focused, proactiv
    }
    ```
 
-3. Restart Claude Code. The eight skills will now be available automatically.
+3. Restart Claude Code. The eleven skills will now be available automatically.
 
 ---
 
