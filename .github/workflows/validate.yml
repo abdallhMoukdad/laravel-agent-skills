@@ -18,8 +18,19 @@ jobs:
           php-version: "8.3"
           coverage: none
 
+      - name: Install Laravel framework for symbol verification
+        run: |
+          mkdir -p .verify
+          cd .verify
+          composer require --no-progress laravel/framework:^12.0 2>&1 | tail -5
+
       - name: Validate plugin structure
         run: php scripts/validate-plugin.php
+
+      - name: Verify PHP symbols against Laravel 12 source
+        run: |
+          export VENDOR_PATH=".verify/vendor/autoload.php"
+          php scripts/verify-symbols.php
 
       - name: Validate plugin.json is valid JSON
         run: php -r 'json_decode(file_get_contents(".claude-plugin/plugin.json"), false, 512, JSON_THROW_ON_ERROR); echo "plugin.json OK\n";'
