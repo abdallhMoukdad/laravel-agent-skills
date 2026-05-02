@@ -41,7 +41,7 @@ Cache::put(string $key, mixed $value, \DateTimeInterface|\DateInterval|int|null 
 Cache::put("invoices:{$id}:summary", $summary, now()->addHours(2));
 ```
 
-Passing `null` as the TTL stores the item forever — avoid this in application code; use `putForever()` or `rememberForever()` to make the intent explicit.
+Passing `null` as the TTL stores the item forever — avoid this in application code; use `Cache::forever()` or `rememberForever()` to make the intent explicit.
 
 ### `Cache::get()`
 
@@ -244,74 +244,59 @@ Always prefix keys with an application or environment identifier when multiple a
 
 ## Testing
 
-### `Cache::fake()`
+`Cache::fake()` and its assertion methods (`assertStored`, `assertMissing`, `assertHas`, `assertForgotten`) do not exist in Laravel 12. Use one of the two approaches below instead.
 
-Swaps the cache with an in-memory array store and enables assertion methods.
+### Option A — Array driver (preferred for integration tests)
+
+Set `CACHE_STORE=array` in `phpunit.xml` or `.env.testing`. The array driver is an in-memory store; after the code under test runs, assert directly with `Cache::get()`.
+
+```xml
+<!-- phpunit.xml -->
+<env name="CACHE_STORE" value="array"/>
+```
 
 ```php
-use Illuminate\Support\Facades\Cache;
-
-beforeEach(function (): void {
-    Cache::fake();
-});
-
-it('caches the invoice PDF', function (): void {
+it('caches the invoice', function () {
+    // array driver stores in-memory — no fake needed
     $invoice = Invoice::factory()->create();
 
-    $service = app(InvoiceService::class);
-    $service->getPdf($invoice->id);
+    app(InvoiceService::class)->fetchWithCache($invoice->id);
 
-    Cache::assertStored("invoices:{$invoice->id}:pdf");
-});
-
-it('invalidates cache after invoice update', function (): void {
-    $invoice = Invoice::factory()->create();
-
-    Cache::put("invoices:{$invoice->id}:pdf", 'old-pdf');
-
-    $service = app(InvoiceService::class);
-    $service->updateInvoice($invoice, ['status' => 'paid']);
-
-    Cache::assertMissing("invoices:{$invoice->id}:pdf");
+    expect(Cache::get("invoices:{$invoice->id}"))->not->toBeNull();
 });
 ```
 
-### Assertion Methods
+### Option B — `Cache::spy()` (for interaction tests)
+
+Use `Cache::spy()` when you need to verify the number of cache reads/writes without replacing the underlying store.
 
 ```php
-Cache::assertStored('key');
-Cache::assertStored('key', $value);               // assert stored with exact value
-Cache::assertMissing('key');
-Cache::assertHas('key');                           // alias for assertStored without value check
-Cache::assertForgotten('key');                    // assert forget() was called
+it('calls remember once', function () {
+    Cache::spy();
+
+    app(InvoiceService::class)->fetchWithCache(1);
+
+    Cache::shouldHaveReceived('remember')->once();
+});
 ```
 
-### `Cache::spy()`
+---
 
-Use `Cache::spy()` when you need to verify the number of cache reads/writes without swapping the underlying store. Unlike `fake()`, `spy()` does not clear existing data.
+## Stale-While-Revalidate with `Cache::flexible()`
+
+`Cache::flexible()` is a Laravel 11+/12 method that implements stale-while-revalidate: it serves the cached value immediately and regenerates in the background using `defer()` once the item enters its stale window. It eliminates perceived latency without a lock.
 
 ```php
-Cache::spy();
-
-$service->getPdf($invoiceId);
-
-Cache::shouldHaveReceived('remember')
-    ->once()
-    ->with("invoices:{$invoiceId}:pdf", \Mockery::any(), \Mockery::type('Closure'));
+Cache::flexible(string $key, array $ttl, Closure $callback): mixed
 ```
-
-### Testing Cache Tags
-
-`Cache::fake()` supports tags:
 
 ```php
-Cache::fake();
-
-Cache::tags(['invoices'])->put("invoices:1:pdf", 'pdf-data', 60);
-
-Cache::assertStored("invoices:1:pdf");
-
-Cache::tags(['invoices'])->flush();
-
-Cache::assertMissing("invoices:1:pdf");
+$result = Cache::flexible("invoices:{$id}", [
+    now()->addMinutes(5),   // fresh for 5 minutes
+    now()->addMinutes(10),  // serve stale for up to 10 minutes, then recompute
+], fn () => Invoice::find($id));
 ```
+
+The first TTL value is the "fresh" window. The second is the "stale" window — during this period the old value is returned immediately and a background job refreshes it. After the stale window expires the key is regenerated synchronously on the next request.
+
+Use `Cache::flexible()` for read-heavy data where a slightly stale response is acceptable (dashboards, aggregates, reports). Use `Cache::remember()` with a lock when stale data must never be served (pricing, inventory).

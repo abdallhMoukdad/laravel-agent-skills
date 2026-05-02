@@ -1,6 +1,6 @@
 ## Atomic Locks
 
-`Cache::lock()` acquires a distributed mutual exclusion lock backed by the cache store. Use it to prevent concurrent execution of expensive, non-idempotent, or single-writer operations. Requires the `redis`, `memcached`, or `database` driver — `file` and `array` do not support atomic locking.
+`Cache::lock()` acquires a mutual exclusion lock backed by the cache store. Use it to prevent concurrent execution of expensive, non-idempotent, or single-writer operations. Laravel 12 ships `FileLock` and `ArrayLock` implementations, so the `file` and `array` drivers fully support atomic locking. The `redis` driver is recommended for production multi-server setups because file locks are not shared across servers; file locks work correctly for single-server deployments and in tests. The `memcached` and `database` drivers also support locking.
 
 ```php
 $lock = Cache::lock(string $name, int $seconds = 0, ?string $owner = null): Lock

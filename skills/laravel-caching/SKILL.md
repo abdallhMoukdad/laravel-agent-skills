@@ -196,6 +196,21 @@ if ($lock->get()) {
 
 ---
 
+## Stale-While-Revalidate
+
+Use `Cache::flexible()` when serving slightly stale data is acceptable. It returns the cached value immediately (no lock wait) and regenerates in the background once the item enters its stale window:
+
+```php
+$result = Cache::flexible("invoices:{$id}", [
+    now()->addMinutes(5),   // fresh for 5 minutes
+    now()->addMinutes(10),  // serve stale for up to 10 minutes, then recompute
+], fn () => Invoice::find($id));
+```
+
+Use `Cache::flexible()` for read-heavy data where a slightly stale response is acceptable (dashboards, aggregates, reports). Use `Cache::remember()` + a lock when stale data must never be served (pricing, inventory).
+
+---
+
 ## Where to Cache
 
 Cache in the **service layer**, never in controllers or Eloquent models.
@@ -275,6 +290,6 @@ php artisan route:cache
 
 ## Additional Resources
 
-- `references/cache-patterns.md` — Complete `Cache::` method signatures, TTL patterns, tagging with flush, testing with `Cache::fake()` and `Cache::spy()`, and common pitfalls.
+- `references/cache-patterns.md` — Complete `Cache::` method signatures, TTL patterns, tagging with flush, `Cache::flexible()` stale-while-revalidate, testing with `Cache::spy()` and the array driver, and common pitfalls.
 - `references/cache-locks.md` — Atomic locks with `Cache::lock()`, `get()` vs `block()`, releasing locks safely, `restoreLock()` for cross-process handoff, and distributed lock patterns.
 - `references/cache-drivers.md` — Per-driver configuration details for `file`, `redis`, `database`, and `array`; Predis vs phpredis; production Redis setup; environment variable checklist.

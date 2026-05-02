@@ -32,7 +32,7 @@ Stores each cache entry as a serialized file in the `storage/framework/cache/dat
 
 **Never use in production because:**
 - No support for cache tags (throws `BadMethodCallException`)
-- No support for atomic locks
+- Atomic locks work on a single server only — file locks are not shared across multiple web servers
 - Performance degrades with large numbers of entries (filesystem I/O)
 - Not shared across multiple web servers — each server has its own file cache
 
@@ -177,15 +177,9 @@ Stores cache entries in a PHP array in memory. Entries do not persist between re
 
 **Use for:** Automated tests only.
 
-The `array` driver supports tags and makes assertions against `Cache::fake()` work correctly. Never use it in production — every request starts with an empty cache.
+The `array` driver supports tags and atomic locks (in-memory only). Never use it in production — every request starts with an empty cache.
 
-In tests, use `Cache::fake()` (which uses the array driver internally) rather than setting `CACHE_STORE=array` globally:
-
-```php
-beforeEach(function (): void {
-    Cache::fake();
-});
-```
+In tests, set `CACHE_STORE=array` in `phpunit.xml` or `.env.testing` and assert directly with `Cache::get()`. Use `Cache::spy()` when you need to verify the number of cache interactions.
 
 ---
 
@@ -230,11 +224,11 @@ The `CACHE_PREFIX` env var is prepended to every cache key Laravel writes. Witho
 
 ## Driver Comparison Summary
 
-| Feature              | `file`  | `redis`  | `database` | `array`     |
-|----------------------|---------|----------|------------|-------------|
-| Cache tags           | No      | Yes      | No         | Yes (fake)  |
-| Atomic locks         | No      | Yes      | Yes        | No          |
-| Multi-server shared  | No      | Yes      | Yes        | No          |
-| TTL precision        | Seconds | Seconds  | Seconds    | Seconds     |
-| Production use       | No      | Yes      | Yes (limited) | No       |
-| Test use             | Avoid   | Avoid    | Avoid      | Yes         |
+| Feature              | `file`                              | `redis`  | `database` | `array`                        |
+|----------------------|-------------------------------------|----------|------------|--------------------------------|
+| Cache tags           | No                                  | Yes      | No         | Yes                            |
+| Atomic locks         | Yes (single-server only — not distributed) | Yes | Yes   | Yes (in-memory, tests only)    |
+| Multi-server shared  | No                                  | Yes      | Yes        | No                             |
+| TTL precision        | Seconds                             | Seconds  | Seconds    | Seconds                        |
+| Production use       | No                                  | Yes      | Yes (limited) | No                          |
+| Test use             | Avoid                               | Avoid    | Avoid      | Yes                            |
