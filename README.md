@@ -1,12 +1,12 @@
 # laravel-agent-skills
 
-A [Claude Code](https://claude.ai/code) plugin providing eleven focused, proactive skills for building production-quality Laravel 12 API-only backends. Each skill activates automatically when you work in its domain, guiding you toward best practices without getting in the way.
+A [Claude Code](https://claude.ai/code) plugin providing twelve focused, proactive skills for building production-quality Laravel 12 API-only backends. Each skill activates automatically when you work in its domain, guiding you toward best practices without getting in the way.
 
 ---
 
 ## What This Plugin Does
 
-`laravel-agent-skills` ships eleven skills that cover the full surface area of a modern Laravel 12 REST/JSON API backend:
+`laravel-agent-skills` ships twelve skills that cover the full surface area of a modern Laravel 12 REST/JSON API backend:
 
 | Skill | Trigger Conditions | What It Covers |
 |---|---|---|
@@ -21,6 +21,7 @@ A [Claude Code](https://claude.ai/code) plugin providing eleven focused, proacti
 | **laravel-caching** | Adding caching, using Redis, caching query results, invalidating cache, preventing cache stampede, or configuring cache drivers | Cache drivers, `Cache::remember()`, TTL discipline, namespaced keys, cache tags (Redis), stampede prevention with `Cache::lock()`, stale-while-revalidate with `Cache::flexible()`, service-layer placement |
 | **laravel-security** | Securing a Laravel app, preventing SQL injection, setting up rate limiting, configuring CORS, protecting against mass assignment, or validating input securely | Mass assignment guards, Form Request validation, SQL injection prevention, named rate limiters, CORS configuration, Sanctum token expiration, `$hidden` fields, policy auto-discovery |
 | **laravel-logging** | Adding logging, setting up log channels, writing structured logs, configuring audit logging, or logging user activity | PSR-3 log levels, structured context with dot-notation events, `Log::shareContext()` middleware, sensitive data masking, channel configuration, dedicated audit channel, `Context` facade (Laravel 11+) |
+| **laravel-localization** | Adding multi-language support, translating error messages, setting up i18n, translating database content, or configuring locale detection | UI strings vs DB content split, `SetLocale` middleware (user pref → `X-Locale` → `Accept-Language` → default), `lang/` files (PHP + JSON), validation message translation, `spatie/laravel-translatable` for DB content, locale propagation to queues via `Context`, `Notification::locale()`, `Content-Language` header, `Number::currency()` and Carbon locale formatting |
 
 ---
 
@@ -35,7 +36,7 @@ In Claude Code, run:
 /plugin install laravel-agent-skills@laravel-agent-skills
 ```
 
-Restart Claude Code. All eleven skills are now active and will trigger automatically on relevant phrases.
+Restart Claude Code. All twelve skills are now active and will trigger automatically on relevant phrases.
 
 To update later:
 

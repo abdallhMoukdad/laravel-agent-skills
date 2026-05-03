@@ -5,14 +5,14 @@
     "url": "https://github.com/abdallhMoukdad"
   },
   "metadata": {
-    "description": "Laravel 12 best-practices skills for Claude Code — Eloquent, API, architecture, auth, queues, testing, migrations, exceptions, caching, security, logging."
+    "description": "Laravel 12 best-practices skills for Claude Code — Eloquent, API, architecture, auth, queues, testing, migrations, exceptions, caching, security, logging, localization."
   },
   "plugins": [
     {
       "name": "laravel-agent-skills",
       "source": "./",
-      "description": "Eleven proactive skills for production-quality Laravel 12 API backends. Activates on the right cues to guide Eloquent, API, architecture, auth, queue, test, migration, exception, caching, security, and logging code.",
-      "version": "1.4.0",
+      "description": "Twelve proactive skills for production-quality Laravel 12 API backends. Activates on the right cues to guide Eloquent, API, architecture, auth, queue, test, migration, exception, caching, security, logging, and localization code.",
+      "version": "1.5.0",
       "author": {
         "name": "abdallhMoukdad",
         "url": "https://github.com/abdallhMoukdad"
