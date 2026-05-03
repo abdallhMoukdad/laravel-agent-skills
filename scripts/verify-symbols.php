@@ -77,6 +77,8 @@ $thirdPartyPrefixes = [
     'Spatie\\LaravelData\\',
     'Spatie\\Permission\\',
     'Spatie\\Health\\',
+    'Spatie\\Translatable\\',
+    'Spatie\\Sluggable\\',
     'Lorisleiva\\Actions\\',
     'TiMacDonald\\Log\\',
     'Stripe\\',
